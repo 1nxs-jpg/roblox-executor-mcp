@@ -1008,6 +1008,11 @@ end
 local Hub, MainFrame
 
 local function buildHub()
+    local viewport = Camera and Camera.ViewportSize or Vector2.new(1280, 720)
+    local isPhone = viewport.X < 700 or viewport.Y < 600
+    local windowW = isPhone and math.clamp(math.floor(viewport.X * 0.92), 320, 560) or 620
+    local windowH = isPhone and math.clamp(math.floor(viewport.Y * 0.82), 360, 500) or 480
+
     Hub = Instance.new("ScreenGui")
     Hub.Name = "1nxsHub"
     Hub.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -1020,8 +1025,9 @@ local function buildHub()
     -- Main window
     MainFrame = Instance.new("Frame")
     MainFrame.Name = "Main"
-    MainFrame.Size = UDim2.new(0, 620, 0, 480)
-    MainFrame.Position = UDim2.new(0.5, -310, 0.5, -240)
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainFrame.Size = UDim2.new(0, windowW, 0, windowH)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.BackgroundColor3 = C.Bg1
     MainFrame.BackgroundTransparency = 0.14
     MainFrame.BorderSizePixel = 0
@@ -1029,6 +1035,10 @@ local function buildHub()
     MainFrame.Parent = Hub
     corner(MainFrame, UDim.new(0, 14))
     stroke(MainFrame, C.AccentDim, 1, 0.45)
+
+    local uiScale = Instance.new("UIScale")
+    uiScale.Scale = isPhone and math.clamp(math.min(viewport.X / 620, viewport.Y / 480), 0.78, 0.92) or 1
+    uiScale.Parent = MainFrame
 
     local topSheen = Instance.new("Frame")
     topSheen.Size = UDim2.new(1, -30, 0, 1)
@@ -1182,14 +1192,14 @@ local function buildHub()
     pad(sidebar, 8, 8, 8, 8)
 
     local categories = {
-        {name="ESP",       icon="ESP",   order=1},
-        {name="Evidence",  icon="EVID",  order=2},
-        {name="Ghost ID",  icon="GHOST", order=3},
-        {name="Abilities", icon="ABIL",  order=4},
-        {name="Survival",  icon="SURV",  order=5},
-        {name="Visual",    icon="VIS",   order=6},
-        {name="Tools",     icon="TOOLS", order=7},
-        {name="Config",    icon="CFG",   order=8},
+        {name="ESP",       icon="👁",   order=1},
+        {name="Evidence",  icon="🔍",   order=2},
+        {name="Ghost ID",  icon="👻",   order=3},
+        {name="Abilities", icon="⚡",   order=4},
+        {name="Survival",  icon="🛡",   order=5},
+        {name="Visual",    icon="✨",   order=6},
+        {name="Tools",     icon="⚙",   order=7},
+        {name="Config",    icon="🗂",   order=8},
     }
 
     local sideBtns = {}
@@ -1210,7 +1220,7 @@ local function buildHub()
     homeIco.Size = UDim2.new(0, 36, 1, 0)
     homeIco.Position = UDim2.new(0, 8, 0, 0)
     homeIco.BackgroundTransparency = 1
-    homeIco.Text = "HOME"
+    homeIco.Text = "🏠"
     homeIco.TextColor3 = C.Text2
     homeIco.Font = C.FontMed
     homeIco.TextSize = 10
@@ -1353,6 +1363,7 @@ local function buildHub()
         local pg = Instance.new("ScrollingFrame")
         pg.Name = name
         pg.Size = UDim2.new(1, 0, 1, 0)
+        pg.Position = UDim2.new(0, 0, 0, 0)
         pg.BackgroundTransparency = 1
         pg.BorderSizePixel = 0
         pg.ScrollBarThickness = 3
@@ -1756,11 +1767,17 @@ local function buildHub()
             return false, "Profile file is invalid"
         end
         S._configLoading = true
+        local deferredEvidenceESP = data.features["Evidence ESP"]
         for featureName, ctrl in pairs(S._toggleControls) do
-            local target = data.features[featureName]
-            if target ~= nil then
-                ctrl.set(target, true)
+            if featureName ~= "Evidence ESP" then
+                local target = data.features[featureName]
+                if target ~= nil then
+                    ctrl.set(target, true)
+                end
             end
+        end
+        if deferredEvidenceESP ~= nil and S._toggleControls["Evidence ESP"] then
+            S._toggleControls["Evidence ESP"].set(deferredEvidenceESP, true)
         end
         S._configLoading = false
         updateCount()
@@ -2207,11 +2224,31 @@ local function buildHub()
     -- ═══════════════════════════════════════
     local evidPage = makePage("Evidence")
 
+    local evidenceBulkToggles = {
+        "Freezing Detector",
+        "EMF Monitor",
+        "Spirit Box Monitor",
+        "Ghost Orb Detector",
+        "Inscription Detector",
+        "Wither Detector",
+        "Laser Detector",
+    }
+
+    local function setEvidenceBulkToggles(on)
+        for _, featureName in ipairs(evidenceBulkToggles) do
+            local ctrl = S._toggleControls[featureName]
+            if ctrl then
+                ctrl.set(on, true)
+            end
+        end
+    end
+
     -- Evidence ESP
     makeToggle(evidPage, "Evidence ESP", "Highlight ALL evidence in world", 1, function(on)
         clearHL("evidence")
         rmConn("ev_hp_a") rmConn("ev_air_a") rmConn("ev_scr_a")
         rmConn("ev_salt_a") rmConn("ev_glass_a") rmConn("ev_lidar_a")
+        setEvidenceBulkToggles(on)
         if not on then return end
         S.Highlights["evidence"] = {}; S.Billboards["evidence"] = {}
 
@@ -3001,16 +3038,63 @@ local function buildHub()
     end)
 
     makeToggle(survPage, "Anti-Death", "Keep health at maximum", 4, function(on)
-        rmConn("antideath")
+        rmConn("antideath_char")
+        rmConn("antideath_health")
+        rmConn("antideath_state")
         if not on then return end
-        addConn("antideath", RunService.Heartbeat:Connect(function()
+
+        local function protectCharacter(char)
             if not S.Features["Anti-Death"] then return end
-            local c = LocalPlayer.Character
-            if c then
-                local h = c:FindFirstChildOfClass("Humanoid")
-                if h then h.Health = h.MaxHealth end
+            if not char then return end
+
+            local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+            if not S.Features["Anti-Death"] then return end
+            if not hum or not hum.Parent then return end
+
+            pcall(function()
+                hum.BreakJointsOnDeath = false
+            end)
+            pcall(function()
+                hum.RequiresNeck = false
+            end)
+            pcall(function()
+                if hum.MaxHealth < 100 then
+                    hum.MaxHealth = 100
+                end
+            end)
+
+            local function restoreHealth()
+                if not S.Features["Anti-Death"] then return end
+                if hum.Parent and hum.Health < hum.MaxHealth then
+                    pcall(function()
+                        hum.Health = hum.MaxHealth
+                    end)
+                end
             end
-        end))
+
+            restoreHealth()
+
+            rmConn("antideath_health")
+            addConn("antideath_health", hum:GetPropertyChangedSignal("Health"):Connect(function()
+                if not S.Features["Anti-Death"] then return end
+                if hum.Health < hum.MaxHealth then
+                    task.defer(restoreHealth)
+                end
+            end))
+
+            rmConn("antideath_state")
+            addConn("antideath_state", hum.StateChanged:Connect(function(_, state)
+                if not S.Features["Anti-Death"] then return end
+                if state == Enum.HumanoidStateType.Dead then
+                    task.defer(restoreHealth)
+                end
+            end))
+        end
+
+        addConn("antideath_char", LocalPlayer.CharacterAdded:Connect(protectCharacter))
+        if LocalPlayer.Character then
+            task.spawn(protectCharacter, LocalPlayer.Character)
+        end
     end)
 
     -- Auto Hide on Hunt (FIXED: uses Ghost:Hunting attribute)
@@ -3472,7 +3556,15 @@ local function buildHub()
     -- ═══════════════════════════════════════
     local function switchCat(name)
         currentCat = name
-        for n, pg in pairs(pages) do pg.Visible = (n == name) end
+        for n, pg in pairs(pages) do
+            if n == name then
+                pg.Visible = true
+                pg.Position = UDim2.new(0, 14, 0, 0)
+                tw(pg, {Position = UDim2.new(0, 0, 0, 0)}, C.SpeedFast)
+            else
+                pg.Visible = false
+            end
+        end
         for n, d in pairs(sideBtns) do
             if n == name then
                 tw(d.button, {BackgroundTransparency = 0.05}, C.Speed)
@@ -3482,8 +3574,8 @@ local function buildHub()
                 tw(d.label, {TextColor3 = C.Text2}, C.Speed)
             end
         end
+        if name == "Abilities" and updateAbilityPanel then updateAbilityPanel() end
     end
-    if name == "Abilities" and updateAbilityPanel then updateAbilityPanel() end
 
     for name, d in pairs(sideBtns) do
         d.button.MouseButton1Click:Connect(function() switchCat(name) end)
@@ -3595,7 +3687,7 @@ local function buildHub()
         if S._origLight then for k, v in pairs(S._origLight) do pcall(function() Lighting[k] = v end) end end
         if S._origFog then pcall(function() Lighting.FogEnd = S._origFog.FogEnd; Lighting.FogStart = S._origFog.FogStart end) end
         pcall(function() if EvidHudGui then EvidHudGui:Destroy() end end)
-        tw(MainFrame, {Size = UDim2.new(0, 620, 0, 0), BackgroundTransparency = 1}, 0.3)
+            tw(MainFrame, {Size = UDim2.new(0, windowW, 0, 0), BackgroundTransparency = 1}, 0.3)
         task.wait(0.35)
         Hub:Destroy()
     end)
@@ -3604,9 +3696,12 @@ local function buildHub()
         S.Visible = not S.Visible
         if S.Visible then
             MainFrame.Visible = true
-            tw(MainFrame, {Size = UDim2.new(0, 620, 0, 480)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            uiScale.Scale = isPhone and 0.88 or 0.94
+            tw(uiScale, {Scale = isPhone and 0.92 or 1}, 0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            tw(MainFrame, {Size = UDim2.new(0, windowW, 0, windowH)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
         else
-            tw(MainFrame, {Size = UDim2.new(0, 620, 0, 44)}, 0.2)
+            tw(uiScale, {Scale = isPhone and 0.9 or 1}, 0.18)
+            tw(MainFrame, {Size = UDim2.new(0, windowW, 0, 44)}, 0.2)
         end
     end)
 
@@ -3630,8 +3725,10 @@ local function buildHub()
     MainFrame.Size = UDim2.new(0, 0, 0, 0)
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.BackgroundTransparency = 0.8
+    uiScale.Scale = isPhone and 0.88 or 0.94
     task.wait(0.1)
-    tw(MainFrame, {BackgroundTransparency = 0.14, Size = UDim2.new(0, 620, 0, 480), Position = UDim2.new(0.5, -310, 0.5, -240)}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    tw(MainFrame, {BackgroundTransparency = 0.14, Size = UDim2.new(0, windowW, 0, windowH), Position = UDim2.new(0.5, 0, 0.5, 0)}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    tw(uiScale, {Scale = isPhone and 0.92 or 1}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
     task.wait(0.6)
     notify("🕯 Demonology Hub v5.0 loaded", C.Accent, 4)
