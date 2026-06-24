@@ -1007,296 +1007,215 @@ local function buildHub()
     pcall(function() Hub.Parent = CoreGui end)
     if not Hub.Parent then Hub.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
-    -- Main modal (glassmorphism, 85% x 78%)
-    local W, H = 720, 520
+    -- Main window
     MainFrame = Instance.new("Frame")
     MainFrame.Name = "Main"
-    MainFrame.Size = UDim2.new(0, W, 0, H)
-    MainFrame.Position = UDim2.new(0.5, -W/2, 0.5, -H/2)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 20)
-    MainFrame.BackgroundTransparency = 0.18
+    MainFrame.Size = UDim2.new(0, 620, 0, 480)
+    MainFrame.Position = UDim2.new(0.5, -310, 0.5, -240)
+    MainFrame.BackgroundColor3 = C.Bg1
+    MainFrame.BackgroundTransparency = 0.12
     MainFrame.BorderSizePixel = 0
     MainFrame.ClipsDescendants = true
     MainFrame.Parent = Hub
-    corner(MainFrame, UDim.new(0, 24))
-    stroke(MainFrame, Color3.fromRGB(80, 90, 160), 1, 0.5)
+    corner(MainFrame, UDim.new(0, 14))
+    stroke(MainFrame, C.AccentDim, 1, 0.35)
 
-    -- Glass sheen at top
-    local sheen = Instance.new("Frame")
-    sheen.Size = UDim2.new(1, -40, 0, 1)
-    sheen.Position = UDim2.new(0, 20, 0, 1)
-    sheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    sheen.BackgroundTransparency = 0.85
-    sheen.BorderSizePixel = 0
-    sheen.Parent = MainFrame
+    local topSheen = Instance.new("Frame")
+    topSheen.Size = UDim2.new(1, -30, 0, 1)
+    topSheen.Position = UDim2.new(0, 15, 0, 1)
+    topSheen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    topSheen.BackgroundTransparency = 0.82
+    topSheen.BorderSizePixel = 0
+    topSheen.Parent = MainFrame
 
-    -- ═══ TOP HEADER BAR ═══
-    local header = Instance.new("Frame")
-    header.Size = UDim2.new(1, 0, 0, 50)
-    header.BackgroundColor3 = Color3.fromRGB(12, 12, 28)
-    header.BackgroundTransparency = 0.15
-    header.BorderSizePixel = 0
-    header.Parent = MainFrame
-    corner(header, UDim.new(0, 24))
+    -- TITLE BAR
+    local titleBar = Instance.new("Frame")
+    titleBar.Size = UDim2.new(1, 0, 0, 44)
+    titleBar.BackgroundColor3 = C.Bg2
+    titleBar.BackgroundTransparency = 0.2
+    titleBar.BorderSizePixel = 0
+    titleBar.Parent = MainFrame
+    corner(titleBar, UDim.new(0, 14))
 
-    local hdrFix = Instance.new("Frame")
-    hdrFix.Size = UDim2.new(1, 0, 0, 10)
-    hdrFix.Position = UDim2.new(0, 0, 1, -10)
-    hdrFix.BackgroundColor3 = Color3.fromRGB(12, 12, 28)
-    hdrFix.BackgroundTransparency = 0.15
-    hdrFix.BorderSizePixel = 0
-    hdrFix.Parent = header
+    local titleFix = Instance.new("Frame")
+    titleFix.Size = UDim2.new(1, 0, 0, 12)
+    titleFix.Position = UDim2.new(0, 0, 1, -12)
+    titleFix.BackgroundColor3 = C.Bg2
+    titleFix.BackgroundTransparency = 0.2
+    titleFix.BorderSizePixel = 0
+    titleFix.Parent = titleBar
 
-    -- Logo circle
-    local logo = Instance.new("Frame")
-    logo.Size = UDim2.new(0, 32, 0, 32)
-    logo.Position = UDim2.new(0, 12, 0.5, -16)
-    logo.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    logo.BackgroundTransparency = 0.05
-    logo.BorderSizePixel = 0
-    logo.Parent = header
-    corner(logo, UDim.new(1, 0))
-    local logoStroke = Instance.new("UIStroke")
-    logoStroke.Color = Color3.fromRGB(130, 50, 230)
-    logoStroke.Thickness = 2
-    logoStroke.Parent = logo
-    local logoIcon = Instance.new("TextLabel")
-    logoIcon.Size = UDim2.new(1, 0, 1, 0)
-    logoIcon.BackgroundTransparency = 1
-    logoIcon.Text = "🌙"
-    logoIcon.TextSize = 17
-    logoIcon.Parent = logo
+    local titleLine = Instance.new("Frame")
+    titleLine.Size = UDim2.new(1, 0, 0, 1)
+    titleLine.Position = UDim2.new(0, 0, 1, 0)
+    titleLine.BackgroundColor3 = C.AccentDim
+    titleLine.BackgroundTransparency = 0.6
+    titleLine.BorderSizePixel = 0
+    titleLine.Parent = titleBar
 
-    -- Title
     local titleTxt = Instance.new("TextLabel")
-    titleTxt.Size = UDim2.new(0, 180, 0, 18)
-    titleTxt.Position = UDim2.new(0, 52, 0, 8)
+    titleTxt.Size = UDim2.new(0, 220, 0, 18)
+    titleTxt.Position = UDim2.new(0, 16, 0, 6)
     titleTxt.BackgroundTransparency = 1
-    titleTxt.Text = "1nxs hub"
-    titleTxt.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleTxt.Text = "DEMONOLOGY HUB"
+    titleTxt.TextColor3 = C.Text1
     titleTxt.Font = C.Font
-    titleTxt.TextSize = 16
+    titleTxt.TextSize = 15
     titleTxt.TextXAlignment = Enum.TextXAlignment.Left
-    titleTxt.Parent = header
-    local subtitleTxt = Instance.new("TextLabel")
-    subtitleTxt.Size = UDim2.new(0, 150, 0, 13)
-    subtitleTxt.Position = UDim2.new(0, 52, 0, 28)
-    subtitleTxt.BackgroundTransparency = 1
-    subtitleTxt.Text = "- demonology"
-    subtitleTxt.TextColor3 = Color3.fromRGB(140, 140, 170)
-    subtitleTxt.Font = C.FontReg
-    subtitleTxt.TextSize = 11
-    subtitleTxt.TextXAlignment = Enum.TextXAlignment.Left
-    subtitleTxt.Parent = header
+    titleTxt.Parent = titleBar
 
-    -- Status badge
+    local subtitleTxt = Instance.new("TextLabel")
+    subtitleTxt.Size = UDim2.new(0, 200, 0, 12)
+    subtitleTxt.Position = UDim2.new(0, 16, 0, 25)
+    subtitleTxt.BackgroundTransparency = 1
+    subtitleTxt.Text = "1nxs · v4.5"
+    subtitleTxt.TextColor3 = C.Text3
+    subtitleTxt.Font = C.FontReg
+    subtitleTxt.TextSize = 10
+    subtitleTxt.TextXAlignment = Enum.TextXAlignment.Left
+    subtitleTxt.Parent = titleBar
+
     local statusBadge = Instance.new("TextLabel")
-    statusBadge.Size = UDim2.new(0, 72, 0, 22)
-    statusBadge.Position = UDim2.new(1, -195, 0.5, -11)
-    statusBadge.BackgroundColor3 = Color3.fromRGB(20, 20, 38)
-    statusBadge.BackgroundTransparency = 0.3
+    statusBadge.Size = UDim2.new(0, 72, 0, 20)
+    statusBadge.Position = UDim2.new(1, -184, 0.5, -10)
+    statusBadge.BackgroundColor3 = C.Bg4
+    statusBadge.BackgroundTransparency = 0.25
     statusBadge.BorderSizePixel = 0
     statusBadge.Text = "0 active"
     statusBadge.TextColor3 = C.AccentBright
     statusBadge.Font = C.FontMed
     statusBadge.TextSize = 10
-    statusBadge.Parent = header
+    statusBadge.Parent = titleBar
     corner(statusBadge, UDim.new(1, 0))
     S._statusLabel = statusBadge
 
-    -- Header buttons
-    local function makeHdrBtn(txt, col, px)
-        local b = Instance.new("TextButton")
-        b.Size = UDim2.new(0, 30, 0, 30)
-        b.Position = UDim2.new(1, px, 0.5, -15)
-        b.BackgroundColor3 = Color3.fromRGB(16, 16, 35)
-        b.BackgroundTransparency = 0.4
-        b.BorderSizePixel = 0
-        b.Text = txt
-        b.TextColor3 = col
-        b.Font = C.Font
-        b.TextSize = 13
-        b.Parent = header
-        corner(b, UDim.new(0, 8))
-        stroke(b, col, 1, 0.6)
-        b.MouseEnter:Connect(function() tw(b, {BackgroundTransparency = 0.15}, C.SpeedFast) end)
-        b.MouseLeave:Connect(function() tw(b, {BackgroundTransparency = 0.4}, C.SpeedFast) end)
-        return b
+    local function makeBtn(name, text, col, posX)
+        local btn = Instance.new("TextButton")
+        btn.Name = name
+        btn.Size = UDim2.new(0, 26, 0, 26)
+        btn.Position = UDim2.new(1, posX, 0.5, -13)
+        btn.BackgroundColor3 = col
+        btn.BackgroundTransparency = 0.9
+        btn.BorderSizePixel = 0
+        btn.Text = text
+        btn.TextColor3 = col
+        btn.Font = C.Font
+        btn.TextSize = 12
+        btn.Parent = titleBar
+        corner(btn, UDim.new(0, 6))
+        btn.MouseEnter:Connect(function() tw(btn, {BackgroundTransparency = 0.5}, C.SpeedFast) end)
+        btn.MouseLeave:Connect(function() tw(btn, {BackgroundTransparency = 0.9}, C.SpeedFast) end)
+        return btn
     end
-    local closeBtn = makeHdrBtn("✕", C.Red, -42)
-    local minBtn   = makeHdrBtn("─", C.Yellow, -78)
-    local copyBtn  = makeHdrBtn("📋", Color3.fromRGB(140, 170, 255), -114)
-    copyBtn.MouseButton1Click:Connect(function()
-        pcall(function()
-            local s = loadstring and "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/1nxs-jpg/1nxs-hub/master/demonology_hub_v5.luau\"))()" or ""
-            setclipboard(s)
-        end)
-        notify("📋 Loadstring copied!", C.Green, 2)
-    end)
 
-    -- Dragging
+    local closeBtn = makeBtn("Close", "✕", C.Red, -36)
+    local minBtn   = makeBtn("Min",   "─", C.Yellow, -66)
+
+    -- dragging
     local dragging, dragStart, startPos
-    header.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging  = true
+            dragStart = input.Position
+            startPos  = MainFrame.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or
+                         input.UserInputType == Enum.UserInputType.Touch) then
             local d = input.Position - dragStart
-            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+            MainFrame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + d.X,
+                startPos.Y.Scale, startPos.Y.Offset + d.Y)
         end
     end)
 
-    -- ═══ LEFT NAV RAIL ═══
-    local rail = Instance.new("Frame")
-    rail.Size = UDim2.new(0, 72, 1, -50)
-    rail.Position = UDim2.new(0, 0, 0, 50)
-    rail.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
-    rail.BackgroundTransparency = 0.2
-    rail.BorderSizePixel = 0
-    rail.Parent = MainFrame
+    -- SIDEBAR
+    local sidebar = Instance.new("Frame")
+    sidebar.Size = UDim2.new(0, 120, 1, -45)
+    sidebar.Position = UDim2.new(0, 0, 0, 45)
+    sidebar.BackgroundColor3 = C.Bg2
+    sidebar.BackgroundTransparency = 0.25
+    sidebar.BorderSizePixel = 0
+    sidebar.Parent = MainFrame
 
-    -- Gradient overlay
-    local railGrad = Instance.new("Frame")
-    railGrad.Size = UDim2.new(0, 1, 1, 0)
-    railGrad.Position = UDim2.new(1, 0, 0, 0)
-    railGrad.BackgroundColor3 = Color3.fromRGB(80, 90, 160)
-    railGrad.BackgroundTransparency = 0.7
-    railGrad.BorderSizePixel = 0
-    railGrad.Parent = rail
+    local sideLayout = Instance.new("UIListLayout")
+    sideLayout.Padding = UDim.new(0, 2)
+    sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    sideLayout.Parent = sidebar
+    pad(sidebar, 8, 8, 6, 6)
 
-    local railList = Instance.new("UIListLayout")
-    railList.Padding = UDim.new(0, 5)
-    railList.SortOrder = Enum.SortOrder.LayoutOrder
-    railList.Parent = rail
-
-    local function padUI(p, t, r, b, l)
-        local pp = Instance.new("UIPadding")
-        pp.PaddingTop = UDim.new(0, t or 8); pp.PaddingRight = UDim.new(0, r or 0)
-        pp.PaddingBottom = UDim.new(0, b or 0); pp.PaddingLeft = UDim.new(0, l or 0)
-        pp.Parent = p
-    end
-    padUI(rail, 8, 0, 8, 0)
-
-    -- Home button
-    local homeBtn = Instance.new("TextButton")
-    homeBtn.Size = UDim2.new(0, 48, 0, 48)
-    homeBtn.Position = UDim2.new(0.5, -24, 0, 0)
-    homeBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 42)
-    homeBtn.BackgroundTransparency = 0.45
-    homeBtn.BorderSizePixel = 0
-    homeBtn.Text = ""
-    homeBtn.LayoutOrder = 0
-    homeBtn.Parent = rail
-    corner(homeBtn, UDim.new(0, 12))
-    local homeIco = Instance.new("TextLabel")
-    homeIco.Size = UDim2.new(1, 0, 1, 0)
-    homeIco.BackgroundTransparency = 1
-    homeIco.Text = "🏠"
-    homeIco.TextSize = 20
-    homeIco.Parent = homeBtn
-
-    local navItems = {
-        {name="ESP",       icon="👁",  order=1},
-        {name="Evidence",  icon="🔍",  order=2},
-        {name="Ghost ID",  icon="👻",  order=3},
-        {name="Abilities", icon="⚡",  order=4},
-        {name="Survival",  icon="🛡",  order=5},
-        {name="Visual",    icon="✨",  order=6},
-        {name="Tools",     icon="⚙",  order=7},
+    local categories = {
+        {name="ESP",       icon="👁",   order=1},
+        {name="Evidence",  icon="🔍",   order=2},
+        {name="Ghost ID",  icon="👻",   order=3},
+        {name="Abilities", icon="⚡",   order=4},
+        {name="Survival",  icon="🛡",   order=5},
+        {name="Visual",    icon="✨",   order=6},
+        {name="Tools",     icon="⚙",    order=7},
     }
 
-    local navBtns = {}
-    local currentNav = "Home"
+    local sideBtns = {}
+    local currentCat = "ESP"
 
-    -- Separator after home
-    local sep1 = Instance.new("Frame")
-    sep1.Size = UDim2.new(0, 40, 0, 1)
-    sep1.Position = UDim2.new(0.5, -20, 0, 0)
-    sep1.BackgroundColor3 = Color3.fromRGB(80, 90, 160)
-    sep1.BackgroundTransparency = 0.7
-    sep1.BorderSizePixel = 0
-    sep1.LayoutOrder = 1
-    sep1.Parent = rail
-
-    local function makeNavBtn(item)
+    for _, cat in ipairs(categories) do
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0, 48, 0, 48)
-        btn.Position = UDim2.new(0.5, -24, 0, 0)
-        btn.BackgroundColor3 = Color3.fromRGB(18, 18, 38)
-        btn.BackgroundTransparency = 0.5
+        btn.Size = UDim2.new(1, 0, 0, 34)
+        btn.BackgroundColor3 = C.Accent
+        btn.BackgroundTransparency = 1
         btn.BorderSizePixel = 0
         btn.Text = ""
-        btn.LayoutOrder = item.order + 1
-        btn.Parent = rail
-        corner(btn, UDim.new(0, 12))
+        btn.LayoutOrder = cat.order
+        btn.Parent = sidebar
+        corner(btn, UDim.new(0, 6))
 
         local ico = Instance.new("TextLabel")
-        ico.Size = UDim2.new(1, 0, 1, 0)
+        ico.Size = UDim2.new(0, 24, 1, 0)
+        ico.Position = UDim2.new(0, 6, 0, 0)
         ico.BackgroundTransparency = 1
-        ico.Text = item.icon
-        ico.TextSize = 18
+        ico.Text = cat.icon
+        ico.TextSize = 13
         ico.Parent = btn
 
         local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(0, 60, 0, 11)
-        lbl.Position = UDim2.new(0.5, -30, 1, 2)
+        lbl.Name = "Lbl"
+        lbl.Size = UDim2.new(1, -34, 1, 0)
+        lbl.Position = UDim2.new(0, 32, 0, 0)
         lbl.BackgroundTransparency = 1
-        lbl.Text = item.name
+        lbl.Text = cat.name
         lbl.TextColor3 = C.Text2
-        lbl.Font = C.FontReg
-        lbl.TextSize = 7
+        lbl.Font = C.FontMed
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.Parent = btn
 
-        navBtns[item.name] = btn
+        sideBtns[cat.name] = {button = btn, label = lbl}
 
         btn.MouseEnter:Connect(function()
-            if currentNav ~= item.name then
-                tw(btn, {BackgroundTransparency = 0.2, Size = UDim2.new(0, 52, 0, 52)}, C.SpeedFast)
-                tw(btn, {Position = UDim2.new(0.5, -26, 0, 0)}, C.SpeedFast)
-            end
+            if currentCat ~= cat.name then tw(btn, {BackgroundTransparency = 0.88}, C.SpeedFast) end
         end)
         btn.MouseLeave:Connect(function()
-            if currentNav ~= item.name then
-                tw(btn, {BackgroundTransparency = 0.5, Size = UDim2.new(0, 48, 0, 48)}, C.SpeedFast)
-                tw(btn, {Position = UDim2.new(0.5, -24, 0, 0)}, C.SpeedFast)
-            end
+            if currentCat ~= cat.name then tw(btn, {BackgroundTransparency = 1}, C.SpeedFast) end
         end)
-        return btn
     end
 
-    for _, item in ipairs(navItems) do makeNavBtn(item) end
-
-    -- Avatar at bottom of rail
-    local railPadding = Instance.new("UIPadding")
-    railPadding.Parent = rail
-    local avatarBtn = Instance.new("TextButton")
-    avatarBtn.Size = UDim2.new(0, 44, 0, 44)
-    avatarBtn.Position = UDim2.new(0.5, -22, 1, -52)
-    avatarBtn.BackgroundColor3 = Color3.fromRGB(100, 80, 160)
-    avatarBtn.BackgroundTransparency = 0.3
-    avatarBtn.BorderSizePixel = 0
-    avatarBtn.Text = "👤"
-    avatarBtn.TextSize = 20
-    avatarBtn.Parent = rail
-    corner(avatarBtn, UDim.new(1, 0))
-    stroke(avatarBtn, Color3.fromRGB(150, 100, 255), 1, 0.4)
-
-    -- ═══ CONTENT AREA ═══
+    -- CONTENT AREA
     local content = Instance.new("Frame")
     content.Name = "Content"
-    content.Size = UDim2.new(1, -76, 1, -50)
-    content.Position = UDim2.new(0, 76, 0, 50)
+    content.Size = UDim2.new(1, -124, 1, -45)
+    content.Position = UDim2.new(0, 124, 0, 45)
     content.BackgroundTransparency = 1
     content.BorderSizePixel = 0
     content.ClipsDescendants = true
     content.Parent = MainFrame
 
-    -- NOTIFICATION CONTAINER (positioned bottom-right outside main frame)
+    -- NOTIFICATION CONTAINER
     local notifBox = Instance.new("Frame")
     notifBox.Size = UDim2.new(0, 220, 0, 180)
     notifBox.Position = UDim2.new(0, 10, 1, -190)
@@ -1310,296 +1229,7 @@ local function buildHub()
     nLayout.Parent = notifBox
     S._notifBox = notifBox
 
-    -- ═══ DASHBOARD (HOME) ═══
-    local dashPage = Instance.new("ScrollingFrame")
-    dashPage.Name = "Dashboard"
-    dashPage.Size = UDim2.new(1, 0, 1, 0)
-    dashPage.BackgroundTransparency = 1
-    dashPage.BorderSizePixel = 0
-    dashPage.ScrollBarThickness = 3
-    dashPage.ScrollBarImageColor3 = Color3.fromRGB(80, 90, 160)
-    dashPage.ScrollBarImageTransparency = 0.4
-    dashPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    dashPage.CanvasSize = UDim2.new(0, 0, 0, 0)
-    dashPage.Visible = true
-    dashPage.Parent = content
-
-    local dashLay = Instance.new("UIListLayout")
-    dashLay.Padding = UDim.new(0, 8)
-    dashLay.SortOrder = Enum.SortOrder.LayoutOrder
-    dashLay.Parent = dashPage
-    pad(dashPage, 10, 10, 10, 10)
-
-    -- Profile Banner Card
-    local profileCard = Instance.new("Frame")
-    profileCard.Size = UDim2.new(1, 0, 0, 90)
-    profileCard.BackgroundColor3 = Color3.fromRGB(10, 10, 30)
-    profileCard.BackgroundTransparency = 0.15
-    profileCard.BorderSizePixel = 0
-    profileCard.LayoutOrder = 1
-    profileCard.Parent = dashPage
-    corner(profileCard, UDim.new(0, 16))
-    stroke(profileCard, Color3.fromRGB(80, 90, 200), 1, 0.5)
-
-    -- Avatar portrait
-    local avatarPortrait = Instance.new("Frame")
-    avatarPortrait.Size = UDim2.new(0, 64, 0, 64)
-    avatarPortrait.Position = UDim2.new(0, 12, 0.5, -32)
-    avatarPortrait.BackgroundColor3 = Color3.fromRGB(20, 20, 45)
-    avatarPortrait.BackgroundTransparency = 0.4
-    avatarPortrait.BorderSizePixel = 0
-    avatarPortrait.Parent = profileCard
-    corner(avatarPortrait, UDim.new(0, 12))
-    local avatarFace = Instance.new("TextLabel")
-    avatarFace.Size = UDim2.new(1, 0, 1, 0)
-    avatarFace.BackgroundTransparency = 1
-    avatarFace.Text = "👤"
-    avatarFace.TextSize = 32
-    avatarFace.Parent = avatarPortrait
-
-    -- Greeting
-    local greetTxt = Instance.new("TextLabel")
-    greetTxt.Size = UDim2.new(1, -90, 0, 24)
-    greetTxt.Position = UDim2.new(0, 86, 0, 16)
-    greetTxt.BackgroundTransparency = 1
-    greetTxt.Text = "Hello, 1nxsdc"
-    greetTxt.TextColor3 = Color3.fromRGB(255, 255, 255)
-    greetTxt.Font = C.Font
-    greetTxt.TextSize = 20
-    greetTxt.TextXAlignment = Enum.TextXAlignment.Left
-    greetTxt.Parent = profileCard
-    local greetSub = Instance.new("TextLabel")
-    greetSub.Size = UDim2.new(1, -90, 0, 16)
-    greetSub.Position = UDim2.new(0, 86, 0, 44)
-    greetSub.BackgroundTransparency = 1
-    greetSub.Text = "1nxsj - Lunar X"
-    greetSub.TextColor3 = Color3.fromRGB(140, 140, 180)
-    greetSub.Font = C.FontReg
-    greetSub.TextSize = 13
-    greetSub.TextXAlignment = Enum.TextXAlignment.Left
-    greetSub.Parent = profileCard
-
-    -- ═══ MIDDLE ROW (two columns) ═══
-    local midRow = Instance.new("Frame")
-    midRow.Size = UDim2.new(1, 0, 0, 180)
-    midRow.BackgroundTransparency = 1
-    midRow.BorderSizePixel = 0
-    midRow.LayoutOrder = 2
-    midRow.Parent = dashPage
-
-    -- Left column (cards stack)
-    local leftCol = Instance.new("Frame")
-    leftCol.Size = UDim2.new(0.5, -5, 1, 0)
-    leftCol.BackgroundTransparency = 1
-    leftCol.BorderSizePixel = 0
-    leftCol.Parent = midRow
-    local leftLay = Instance.new("UIListLayout")
-    leftLay.Padding = UDim.new(0, 6)
-    leftLay.SortOrder = Enum.SortOrder.LayoutOrder
-    leftLay.Parent = leftCol
-
-    -- Right column (stats grid)
-    local rightCol = Instance.new("Frame")
-    rightCol.Size = UDim2.new(0.5, -5, 1, 0)
-    rightCol.Position = UDim2.new(0.5, 5, 0, 0)
-    rightCol.BackgroundTransparency = 1
-    rightCol.BorderSizePixel = 0
-    rightCol.Parent = midRow
-
-    -- Server Timer Card
-    local timerCard = Instance.new("Frame")
-    timerCard.Size = UDim2.new(1, 0, 0, 56)
-    timerCard.BackgroundColor3 = Color3.fromRGB(8, 8, 28)
-    timerCard.BackgroundTransparency = 0.1
-    timerCard.BorderSizePixel = 0
-    timerCard.LayoutOrder = 1
-    timerCard.Parent = leftCol
-    corner(timerCard, UDim.new(0, 12))
-    stroke(timerCard, Color3.fromRGB(60, 200, 120), 1, 0.4)
-    -- Bottom glow
-    local timerGlow = Instance.new("Frame")
-    timerGlow.Size = UDim2.new(0.6, 0, 0, 2)
-    timerGlow.Position = UDim2.new(0, 0, 1, 0)
-    timerGlow.BackgroundColor3 = Color3.fromRGB(60, 200, 120)
-    timerGlow.BackgroundTransparency = 0.6
-    timerGlow.BorderSizePixel = 0
-    timerGlow.Parent = timerCard
-    corner(timerGlow, UDim.new(1, 0))
-
-    local timerTitle = Instance.new("TextLabel")
-    timerTitle.Size = UDim2.new(1, -20, 0, 18)
-    timerTitle.Position = UDim2.new(0, 12, 0, 6)
-    timerTitle.BackgroundTransparency = 1
-    timerTitle.Text = "In server for"
-    timerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    timerTitle.Font = C.FontMed
-    timerTitle.TextSize = 12
-    timerTitle.TextXAlignment = Enum.TextXAlignment.Left
-    timerTitle.Parent = timerCard
-    local timerDisplay = Instance.new("TextLabel")
-    timerDisplay.Size = UDim2.new(1, -20, 0, 20)
-    timerDisplay.Position = UDim2.new(0, 12, 0, 28)
-    timerDisplay.BackgroundTransparency = 1
-    timerDisplay.Text = "00:00:00"
-    timerDisplay.TextColor3 = Color3.fromRGB(140, 140, 180)
-    timerDisplay.Font = C.FontReg
-    timerDisplay.TextSize = 16
-    timerDisplay.TextXAlignment = Enum.TextXAlignment.Left
-    timerDisplay.Parent = timerCard
-
-    -- Live server timer
-    local serverStart = tick()
-    task.spawn(function()
-        while Hub and Hub.Parent do
-            local elapsed = tick() - serverStart
-            local hrs = math.floor(elapsed / 3600)
-            local mins = math.floor((elapsed % 3600) / 60)
-            local secs = math.floor(elapsed % 60)
-            timerDisplay.Text = string.format("%02d:%02d:%02d", hrs, mins, secs)
-            task.wait(1)
-        end
-    end)
-
-    -- Join Script Card
-    local joinCard = Instance.new("Frame")
-    joinCard.Size = UDim2.new(1, 0, 0, 56)
-    joinCard.BackgroundColor3 = Color3.fromRGB(8, 8, 28)
-    joinCard.BackgroundTransparency = 0.1
-    joinCard.BorderSizePixel = 0
-    joinCard.LayoutOrder = 2
-    joinCard.Parent = leftCol
-    corner(joinCard, UDim.new(0, 12))
-    stroke(joinCard, Color3.fromRGB(120, 160, 255), 1, 0.4)
-    local joinTitle = Instance.new("TextLabel")
-    joinTitle.Size = UDim2.new(1, -20, 0, 18)
-    joinTitle.Position = UDim2.new(0, 12, 0, 6)
-    joinTitle.BackgroundTransparency = 1
-    joinTitle.Text = "Join Script"
-    joinTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    joinTitle.Font = C.FontMed
-    joinTitle.TextSize = 12
-    joinTitle.TextXAlignment = Enum.TextXAlignment.Left
-    joinTitle.Parent = joinCard
-    local joinSub = Instance.new("TextLabel")
-    joinSub.Size = UDim2.new(1, -20, 0, 16)
-    joinSub.Position = UDim2.new(0, 12, 0, 30)
-    joinSub.BackgroundTransparency = 1
-    joinSub.Text = "Tap to copy join script"
-    joinSub.TextColor3 = Color3.fromRGB(140, 140, 180)
-    joinSub.Font = C.FontReg
-    joinSub.TextSize = 11
-    joinSub.TextXAlignment = Enum.TextXAlignment.Left
-    joinSub.Parent = joinCard
-    local joinClick = Instance.new("TextButton")
-    joinClick.Size = UDim2.new(1, 0, 1, 0)
-    joinClick.BackgroundTransparency = 1
-    joinClick.Text = ""
-    joinClick.Parent = joinCard
-    joinClick.MouseButton1Click:Connect(function()
-        pcall(function()
-            local s = "loadstring(game:HttpGet(\"https://raw.githubusercontent.com/1nxs-jpg/1nxs-hub/master/demonology_hub_v5.luau\"))()"
-            setclipboard(s)
-        end)
-        notify("📋 Join script copied!", C.Green, 2)
-    end)
-
-    -- Discord Promo Card
-    local discordCard = Instance.new("Frame")
-    discordCard.Size = UDim2.new(1, 0, 0, 52)
-    discordCard.BackgroundColor3 = Color3.fromRGB(8, 8, 28)
-    discordCard.BackgroundTransparency = 0.1
-    discordCard.BorderSizePixel = 0
-    discordCard.LayoutOrder = 3
-    discordCard.Parent = leftCol
-    corner(discordCard, UDim.new(0, 12))
-    stroke(discordCard, Color3.fromRGB(130, 100, 255), 1, 0.4)
-    local discTitle = Instance.new("TextLabel")
-    discTitle.Size = UDim2.new(1, -20, 0, 18)
-    discTitle.Position = UDim2.new(0, 12, 0, 6)
-    discTitle.BackgroundTransparency = 1
-    discTitle.Text = "Discord"
-    discTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-    discTitle.Font = C.FontMed
-    discTitle.TextSize = 14
-    discTitle.TextXAlignment = Enum.TextXAlignment.Left
-    discTitle.Parent = discordCard
-    local discSub = Instance.new("TextLabel")
-    discSub.Size = UDim2.new(1, -20, 0, 16)
-    discSub.Position = UDim2.new(0, 12, 0, 28)
-    discSub.BackgroundTransparency = 1
-    discSub.Text = "Tap to join the Discord Server"
-    discSub.TextColor3 = Color3.fromRGB(180, 180, 220)
-    discSub.Font = C.FontReg
-    discSub.TextSize = 12
-    discSub.TextXAlignment = Enum.TextXAlignment.Left
-    discSub.Parent = discordCard
-    local discClick = Instance.new("TextButton")
-    discClick.Size = UDim2.new(1, 0, 1, 0)
-    discClick.BackgroundTransparency = 1
-    discClick.Text = ""
-    discClick.Parent = discordCard
-    discClick.MouseButton1Click:Connect(function()
-        notify("📢 Discord link would open here", C.Purple, 3)
-    end)
-
-    -- Stats Grid Card (right column)
-    local statsCard = Instance.new("Frame")
-    statsCard.Size = UDim2.new(1, 0, 1, 0)
-    statsCard.BackgroundColor3 = Color3.fromRGB(8, 8, 28)
-    statsCard.BackgroundTransparency = 0.1
-    statsCard.BorderSizePixel = 0
-    statsCard.Parent = rightCol
-    corner(statsCard, UDim.new(0, 16))
-    stroke(statsCard, Color3.fromRGB(230, 180, 40), 1, 0.4)
-    local statsGlow = Instance.new("Frame")
-    statsGlow.Size = UDim2.new(0.4, 0, 0, 2)
-    statsGlow.Position = UDim2.new(0, 0, 1, 0)
-    statsGlow.BackgroundColor3 = Color3.fromRGB(230, 180, 40)
-    statsGlow.BackgroundTransparency = 0.5
-    statsGlow.BorderSizePixel = 0
-    statsGlow.Parent = statsCard
-    corner(statsGlow, UDim.new(1, 0))
-
-    local statsGrid = Instance.new("UIGridLayout")
-    statsGrid.CellSize = UDim2.new(0.5, -4, 0.5, -4)
-    statsGrid.CellPadding = UDim2.new(0, 4, 0, 4)
-    statsGrid.SortOrder = Enum.SortOrder.LayoutOrder
-    statsGrid.Parent = statsCard
-
-    local statItems = {
-        {title="In Server", sub="12 friends", col=Color3.fromRGB(60, 200, 120)},
-        {title="Offline",   sub="8 friends",  col=Color3.fromRGB(140, 140, 170)},
-        {title="Online",    sub="4 friends",  col=Color3.fromRGB(100, 200, 255)},
-        {title="All",       sub="24 friends", col=Color3.fromRGB(200, 180, 100)},
-    }
-    for _, si in ipairs(statItems) do
-        local tile = Instance.new("Frame")
-        tile.BackgroundColor3 = Color3.fromRGB(16, 16, 38)
-        tile.BackgroundTransparency = 0.3
-        tile.BorderSizePixel = 0
-        tile.Parent = statsCard
-        corner(tile, UDim.new(0, 10))
-        local ttl = Instance.new("TextLabel")
-        ttl.Size = UDim2.new(1, 0, 0, 20)
-        ttl.Position = UDim2.new(0, 0, 0, 8)
-        ttl.BackgroundTransparency = 1
-        ttl.Text = si.title
-        ttl.TextColor3 = Color3.fromRGB(255, 255, 255)
-        ttl.Font = C.FontMed
-        ttl.TextSize = 13
-        ttl.Parent = tile
-        local sbl = Instance.new("TextLabel")
-        sbl.Size = UDim2.new(1, 0, 0, 16)
-        sbl.Position = UDim2.new(0, 0, 0, 30)
-        sbl.BackgroundTransparency = 1
-        sbl.Text = si.sub
-        sbl.TextColor3 = si.col
-        sbl.Font = C.FontReg
-        sbl.TextSize = 11
-        sbl.Parent = tile
-    end
-
-    -- ═══ PAGE BUILDER ═══
+    -- PAGE BUILDER
     local pages = {}
 
     local function makePage(name)
@@ -1609,11 +1239,11 @@ local function buildHub()
         pg.BackgroundTransparency = 1
         pg.BorderSizePixel = 0
         pg.ScrollBarThickness = 3
-        pg.ScrollBarImageColor3 = Color3.fromRGB(80, 90, 160)
+        pg.ScrollBarImageColor3 = C.AccentDim
         pg.ScrollBarImageTransparency = 0.4
         pg.AutomaticCanvasSize = Enum.AutomaticSize.Y
         pg.CanvasSize = UDim2.new(0, 0, 0, 0)
-        pg.Visible = false
+        pg.Visible = (name == currentCat)
         pg.Parent = content
 
         local lay = Instance.new("UIListLayout")
@@ -1640,20 +1270,20 @@ local function buildHub()
     local function makeToggle(parent, name, desc, order, callback)
         local cont = Instance.new("Frame")
         cont.Name = name
-        cont.Size = UDim2.new(1, 0, 0, 42)
-        cont.BackgroundColor3 = Color3.fromRGB(14, 14, 32)
-        cont.BackgroundTransparency = 0.3
+        cont.Size = UDim2.new(1, 0, 0, 44)
+        cont.BackgroundColor3 = C.Bg3
+        cont.BackgroundTransparency = 0.45
         cont.BorderSizePixel = 0
         cont.LayoutOrder = order
         cont.Parent = parent
-        corner(cont, UDim.new(0, 10))
+        corner(cont, UDim.new(0, 8))
 
-        cont.MouseEnter:Connect(function() tw(cont, {BackgroundTransparency = 0.05}, C.SpeedFast) end)
-        cont.MouseLeave:Connect(function() tw(cont, {BackgroundTransparency = 0.3}, C.SpeedFast) end)
+        cont.MouseEnter:Connect(function() tw(cont, {BackgroundTransparency = 0.1}, C.SpeedFast) end)
+        cont.MouseLeave:Connect(function() tw(cont, {BackgroundTransparency = 0.45}, C.SpeedFast) end)
 
         local nm = Instance.new("TextLabel")
         nm.Size = UDim2.new(1, -64, 0, 16)
-        nm.Position = UDim2.new(0, 12, 0, 5)
+        nm.Position = UDim2.new(0, 12, 0, 6)
         nm.BackgroundTransparency = 1
         nm.Text = name
         nm.TextColor3 = C.Text1
@@ -1664,7 +1294,7 @@ local function buildHub()
 
         local ds = Instance.new("TextLabel")
         ds.Size = UDim2.new(1, -64, 0, 12)
-        ds.Position = UDim2.new(0, 12, 0, 23)
+        ds.Position = UDim2.new(0, 12, 0, 24)
         ds.BackgroundTransparency = 1
         ds.Text = desc
         ds.TextColor3 = C.Text3
@@ -1677,7 +1307,7 @@ local function buildHub()
         local pill = Instance.new("Frame")
         pill.Size = UDim2.new(0, 38, 0, 20)
         pill.Position = UDim2.new(1, -50, 0.5, -10)
-        pill.BackgroundColor3 = Color3.fromRGB(25, 25, 50)
+        pill.BackgroundColor3 = C.Bg4
         pill.BorderSizePixel = 0
         pill.Parent = cont
         corner(pill, UDim.new(1, 0))
@@ -1700,12 +1330,12 @@ local function buildHub()
                     tw(circ, {Position = UDim2.new(0, 20, 0.5, -8), BackgroundColor3 = C.Text1}, C.SpeedFast)
                     tw(nm,   {TextColor3 = C.AccentBright}, C.SpeedFast)
                 else
-                    tw(pill, {BackgroundColor3 = Color3.fromRGB(25, 25, 50)}, C.SpeedFast)
+                    tw(pill, {BackgroundColor3 = C.Bg4}, C.SpeedFast)
                     tw(circ, {Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = C.Text2}, C.SpeedFast)
                     tw(nm,   {TextColor3 = C.Text1}, C.SpeedFast)
                 end
             else
-                pill.BackgroundColor3 = v and C.Accent or Color3.fromRGB(25, 25, 50)
+                pill.BackgroundColor3 = v and C.Accent or C.Bg4
                 circ.Position = v and UDim2.new(0, 20, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
                 circ.BackgroundColor3 = v and C.Text1 or C.Text2
                 nm.TextColor3 = v and C.AccentBright or C.Text1
@@ -1735,118 +1365,264 @@ local function buildHub()
         return cont
     end
 
-    -- ═══ PAGE: ESP ═══
+    -- ═══════════════════════════════════════
+    --   PAGE: ESP
+    -- ═══════════════════════════════════════
     local espPage = makePage("ESP")
+
+    -- Ghost ESP (FIXED: uses workspace.Ghost directly)
     makeToggle(espPage, "Ghost ESP", "Track ghost through walls (fixed)", 1, function(on)
-        clearHL("ghost"); rmConn("ghost_loop"); rmConn("ghost_rescan")
+        clearHL("ghost")
+        rmConn("ghost_loop")
+        rmConn("ghost_rescan")
         if not on then return end
-        S.Highlights["ghost"] = {}; S.Billboards["ghost"] = {}
+        S.Highlights["ghost"] = {}
+        S.Billboards["ghost"] = {}
+
         local function scan()
-            clearHL("ghost"); S.Highlights["ghost"] = {}; S.Billboards["ghost"] = {}
+            clearHL("ghost")
+            S.Highlights["ghost"] = {}
+            S.Billboards["ghost"] = {}
+
             local ghost = Workspace:FindFirstChild("Ghost")
             if ghost then
                 local hrp = ghost:FindFirstChild("HumanoidRootPart")
                 if hrp then
-                    local hl = Instance.new("Highlight"); hl.FillColor = Color3.fromRGB(255, 0, 60); hl.FillTransparency = 0.5; hl.OutlineColor = Color3.fromRGB(255, 40, 80); hl.OutlineTransparency = 0.1; hl.Adornee = ghost; hl.Parent = CoreGui
+                    local hl = Instance.new("Highlight")
+                    hl.FillColor = Color3.fromRGB(255, 0, 60)
+                    hl.FillTransparency = 0.5
+                    hl.OutlineColor = Color3.fromRGB(255, 40, 80)
+                    hl.OutlineTransparency = 0.1
+                    hl.Adornee = ghost
+                    hl.Parent = CoreGui
                     table.insert(S.Highlights["ghost"], hl)
-                    local bb = Instance.new("BillboardGui"); bb.Size = UDim2.new(0, 130, 0, 30); bb.StudsOffset = Vector3.new(0, 3.5, 0); bb.AlwaysOnTop = true; bb.Adornee = hrp; bb.Parent = CoreGui
-                    local bg = Instance.new("Frame"); bg.Size = UDim2.new(1, 0, 1, 0); bg.BackgroundColor3 = Color3.fromRGB(20, 0, 8); bg.BackgroundTransparency = 0.2; bg.BorderSizePixel = 0; bg.Parent = bb; corner(bg, UDim.new(0, 6)); stroke(bg, Color3.fromRGB(255, 0, 60), 1, 0.3)
-                    local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0.6, 0); l.Position = UDim2.new(0, 0, 0, 2); l.BackgroundTransparency = 1; l.Text = "👻 GHOST"; l.TextColor3 = Color3.fromRGB(255, 80, 110); l.Font = C.Font; l.TextSize = 12; l.Parent = bb
-                    local dl = Instance.new("TextLabel"); dl.Name = "Dist"; dl.Size = UDim2.new(1, 0, 0.4, 0); dl.Position = UDim2.new(0, 0, 0.6, 0); dl.BackgroundTransparency = 1; dl.Text = ""; dl.TextColor3 = C.Text3; dl.Font = C.FontReg; dl.TextSize = 9; dl.Parent = bb
+
+                    local bb = Instance.new("BillboardGui")
+                    bb.Size = UDim2.new(0, 130, 0, 30)
+                    bb.StudsOffset = Vector3.new(0, 3.5, 0)
+                    bb.AlwaysOnTop = true
+                    bb.Adornee = hrp
+                    bb.Parent = CoreGui
+
+                    local bg = Instance.new("Frame")
+                    bg.Size = UDim2.new(1, 0, 1, 0)
+                    bg.BackgroundColor3 = Color3.fromRGB(20, 0, 8)
+                    bg.BackgroundTransparency = 0.2
+                    bg.BorderSizePixel = 0
+                    bg.Parent = bb
+                    corner(bg, UDim.new(0, 6))
+                    stroke(bg, Color3.fromRGB(255, 0, 60), 1, 0.3)
+
+                    local l = Instance.new("TextLabel")
+                    l.Size = UDim2.new(1, 0, 0.6, 0)
+                    l.Position = UDim2.new(0, 0, 0, 2)
+                    l.BackgroundTransparency = 1
+                    l.Text = "👻 GHOST"
+                    l.TextColor3 = Color3.fromRGB(255, 80, 110)
+                    l.Font = C.Font
+                    l.TextSize = 12
+                    l.Parent = bb
+
+                    local dl = Instance.new("TextLabel")
+                    dl.Name = "Dist"
+                    dl.Size = UDim2.new(1, 0, 0.4, 0)
+                    dl.Position = UDim2.new(0, 0, 0.6, 0)
+                    dl.BackgroundTransparency = 1
+                    dl.Text = ""
+                    dl.TextColor3 = C.Text3
+                    dl.Font = C.FontReg
+                    dl.TextSize = 9
+                    dl.Parent = bb
+
                     table.insert(S.Billboards["ghost"], bb)
                 end
+
                 local holder = Workspace:FindFirstChild("CursedPossessionHolder")
-                if holder then for _, d in pairs(holder:GetDescendants()) do if d.Name == "GhostAnchor" and d:IsA("BasePart") then local hl2 = Instance.new("Highlight"); hl2.FillColor = Color3.fromRGB(255, 0, 60); hl2.FillTransparency = 0.55; hl2.OutlineColor = Color3.fromRGB(255, 40, 80); hl2.OutlineTransparency = 0.15; hl2.Adornee = d.Parent or d; hl2.Parent = CoreGui; table.insert(S.Highlights["ghost"], hl2) end end end
+                if holder then
+                    for _, d in pairs(holder:GetDescendants()) do
+                        if d.Name == "GhostAnchor" and d:IsA("BasePart") then
+                            local hl2 = Instance.new("Highlight")
+                            hl2.FillColor = Color3.fromRGB(255, 0, 60)
+                            hl2.FillTransparency = 0.55
+                            hl2.OutlineColor = Color3.fromRGB(255, 40, 80)
+                            hl2.OutlineTransparency = 0.15
+                            hl2.Adornee = d.Parent or d
+                            hl2.Parent = CoreGui
+                            table.insert(S.Highlights["ghost"], hl2)
+                        end
+                    end
+                end
             end
         end
         scan()
+
         addConn("ghost_loop", RunService.Heartbeat:Connect(function()
             local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not myHRP then return end
-            for _, bb in pairs(S.Billboards["ghost"] or {}) do if bb and bb.Parent and bb.Adornee then local dl = bb:FindFirstChild("Dist") if dl then dl.Text = math.floor((myHRP.Position - bb.Adornee.Position).Magnitude) .. " studs" end end end
+            for _, bb in pairs(S.Billboards["ghost"] or {}) do
+                if bb and bb.Parent and bb.Adornee then
+                    local dist = (myHRP.Position - bb.Adornee.Position).Magnitude
+                    local dl = bb:FindFirstChild("Dist")
+                    if dl then dl.Text = math.floor(dist) .. " studs" end
+                end
+            end
         end))
+
         addConn("ghost_rescan", RunService.Heartbeat:Connect(function()
             if not S.Features["Ghost ESP"] then return end
             local now = tick()
-            if not S._lastGhostScan or now - S._lastGhostScan >= 2 then S._lastGhostScan = now; pcall(scan) end
+            if not S._lastGhostScan or now - S._lastGhostScan >= 2 then
+                S._lastGhostScan = now
+                pcall(scan)
+            end
         end))
     end)
 
+    -- Handprint ESP
     makeToggle(espPage, "Handprint ESP", "Highlight handprints with UV glow", 2, function(on)
-        clearHL("handprints"); rmConn("hp_added"); rmConn("hp_removed")
+        clearHL("handprints")
+        rmConn("hp_added") rmConn("hp_removed")
         if not on then return end
         S.Highlights["handprints"] = {}; S.Billboards["handprints"] = {}
+
         local function hlPrint(obj)
             if not obj:IsA("BasePart") and not obj:IsA("Model") then return end
-            local hl = Instance.new("Highlight"); hl.FillColor = C.EvidPrints; hl.FillTransparency = 0.35; hl.OutlineColor = C.EvidPrints; hl.OutlineTransparency = 0.1; hl.Adornee = obj; hl.Parent = CoreGui
+            local hl = Instance.new("Highlight")
+            hl.FillColor = C.EvidPrints; hl.FillTransparency = 0.35
+            hl.OutlineColor = C.EvidPrints; hl.OutlineTransparency = 0.1
+            hl.Adornee = obj; hl.Parent = CoreGui
             table.insert(S.Highlights["handprints"], hl)
+
             local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
             if part then
-                local bb = Instance.new("BillboardGui"); bb.Size = UDim2.new(0, 100, 0, 22); bb.StudsOffset = Vector3.new(0, 2, 0); bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 1, 0); l.BackgroundColor3 = Color3.fromRGB(20, 8, 30); l.BackgroundTransparency = 0.2; l.Text = "🖐 HANDPRINT"; l.TextColor3 = C.EvidPrints; l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb; corner(l, UDim.new(0, 4))
+                local bb = Instance.new("BillboardGui")
+                bb.Size = UDim2.new(0, 100, 0, 22); bb.StudsOffset = Vector3.new(0, 2, 0)
+                bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
+                local l = Instance.new("TextLabel")
+                l.Size = UDim2.new(1, 0, 1, 0)
+                l.BackgroundColor3 = Color3.fromRGB(20, 8, 30); l.BackgroundTransparency = 0.2
+                l.Text = "🖐 HANDPRINT"; l.TextColor3 = C.EvidPrints
+                l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb
+                corner(l, UDim.new(0, 4))
                 table.insert(S.Billboards["handprints"], bb)
             end
             markEvidence("Prints")
         end
+
         local folder = Workspace:FindFirstChild("Handprints")
         if folder then
             for _, ch in pairs(folder:GetChildren()) do pcall(hlPrint, ch) end
-            addConn("hp_added", folder.ChildAdded:Connect(function(ch) task.wait(0.1); if S.Features["Handprint ESP"] then pcall(hlPrint, ch) end end))
-            addConn("hp_removed", folder.ChildRemoved:Connect(function() if S.Features["Handprint ESP"] then clearHL("handprints"); S.Highlights["handprints"] = {}; S.Billboards["handprints"] = {}; for _, ch in pairs(folder:GetChildren()) do pcall(hlPrint, ch) end end end))
+            addConn("hp_added", folder.ChildAdded:Connect(function(ch)
+                task.wait(0.1); if S.Features["Handprint ESP"] then pcall(hlPrint, ch) end
+            end))
+            addConn("hp_removed", folder.ChildRemoved:Connect(function()
+                if S.Features["Handprint ESP"] then
+                    clearHL("handprints"); S.Highlights["handprints"] = {}; S.Billboards["handprints"] = {}
+                    for _, ch in pairs(folder:GetChildren()) do pcall(hlPrint, ch) end
+                end
+            end))
         end
     end)
 
+    -- Player ESP
     makeToggle(espPage, "Player ESP", "Show all players with distance", 3, function(on)
-        clearHL("players"); rmConn("plr_loop"); rmConn("plr_rescan")
+        clearHL("players"); rmConn("plr_loop") rmConn("plr_rescan")
         if not on then return end
         S.Highlights["players"] = {}; S.Billboards["players"] = {}
+
         local function scan()
             clearHL("players"); S.Highlights["players"] = {}; S.Billboards["players"] = {}
-            for _, p in pairs(Players:GetPlayers()) do if p ~= LocalPlayer and p.Character then
-                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local hl = Instance.new("Highlight"); hl.FillColor = C.Green; hl.FillTransparency = 0.6; hl.OutlineColor = C.Green; hl.OutlineTransparency = 0.2; hl.Adornee = p.Character; hl.Parent = CoreGui
-                    table.insert(S.Highlights["players"], hl)
-                    local bb = Instance.new("BillboardGui"); bb.Size = UDim2.new(0, 110, 0, 30); bb.StudsOffset = Vector3.new(0, 3.5, 0); bb.AlwaysOnTop = true; bb.Adornee = hrp; bb.Parent = CoreGui
-                    local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 0.55, 0); l.BackgroundColor3 = Color3.fromRGB(5, 18, 8); l.BackgroundTransparency = 0.2; l.Text = "👤 " .. p.Name; l.TextColor3 = C.Green; l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb; corner(l, UDim.new(0, 4))
-                    local dl = Instance.new("TextLabel"); dl.Name = "Dist"; dl.Size = UDim2.new(1, 0, 0.45, 0); dl.Position = UDim2.new(0, 0, 0.55, 0); dl.BackgroundTransparency = 1; dl.Text = ""; dl.TextColor3 = C.Text3; dl.Font = C.FontReg; dl.TextSize = 9; dl.Parent = bb
-                    table.insert(S.Billboards["players"], bb)
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local hl = Instance.new("Highlight")
+                        hl.FillColor = C.Green; hl.FillTransparency = 0.6
+                        hl.OutlineColor = C.Green; hl.OutlineTransparency = 0.2
+                        hl.Adornee = p.Character; hl.Parent = CoreGui
+                        table.insert(S.Highlights["players"], hl)
+                        local bb = Instance.new("BillboardGui")
+                        bb.Size = UDim2.new(0, 110, 0, 30); bb.StudsOffset = Vector3.new(0, 3.5, 0)
+                        bb.AlwaysOnTop = true; bb.Adornee = hrp; bb.Parent = CoreGui
+                        local l = Instance.new("TextLabel")
+                        l.Size = UDim2.new(1, 0, 0.55, 0)
+                        l.BackgroundColor3 = Color3.fromRGB(5, 18, 8); l.BackgroundTransparency = 0.2
+                        l.Text = "👤 " .. p.Name; l.TextColor3 = C.Green
+                        l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb
+                        corner(l, UDim.new(0, 4))
+                        local dl = Instance.new("TextLabel")
+                        dl.Name = "Dist"; dl.Size = UDim2.new(1, 0, 0.45, 0); dl.Position = UDim2.new(0, 0, 0.55, 0)
+                        dl.BackgroundTransparency = 1; dl.Text = ""; dl.TextColor3 = C.Text3
+                        dl.Font = C.FontReg; dl.TextSize = 9; dl.Parent = bb
+                        table.insert(S.Billboards["players"], bb)
+                    end
                 end
-            end end
+            end
         end
         scan()
         addConn("plr_loop", RunService.Heartbeat:Connect(function()
             local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not myHRP then return end
-            for _, bb in pairs(S.Billboards["players"] or {}) do if bb and bb.Parent and bb.Adornee then local dl = bb:FindFirstChild("Dist") if dl then dl.Text = math.floor((myHRP.Position - bb.Adornee.Position).Magnitude) .. " studs" end end end
+            for _, bb in pairs(S.Billboards["players"] or {}) do
+                if bb and bb.Parent and bb.Adornee then
+                    local dist = (myHRP.Position - bb.Adornee.Position).Magnitude
+                    local dl = bb:FindFirstChild("Dist")
+                    if dl then dl.Text = math.floor(dist) .. " studs" end
+                end
+            end
         end))
-        addConn("plr_rescan", RunService.Heartbeat:Connect(function() if not S.Features["Player ESP"] then return end local now = tick() if not S._lastPlrScan or now - S._lastPlrScan >= 4 then S._lastPlrScan = now; pcall(scan) end end))
+        addConn("plr_rescan", RunService.Heartbeat:Connect(function()
+            if not S.Features["Player ESP"] then return end
+            local now = tick()
+            if not S._lastPlrScan or now - S._lastPlrScan >= 4 then
+                S._lastPlrScan = now
+                pcall(scan)
+            end
+        end))
     end)
 
+    -- Item ESP
     makeToggle(espPage, "Item ESP", "Highlight all pickable items", 4, function(on)
         clearHL("items"); rmConn("item_a"); rmConn("item_r")
         if not on then return end
         S.Highlights["items"] = {}; S.Billboards["items"] = {}
+
         local function hlItem(item)
             if not item:IsA("Model") and not item:IsA("BasePart") then return end
-            local hl = Instance.new("Highlight"); hl.FillColor = C.Blue; hl.FillTransparency = 0.65; hl.OutlineColor = C.Blue; hl.OutlineTransparency = 0.3; hl.Adornee = item; hl.Parent = CoreGui
+            local hl = Instance.new("Highlight")
+            hl.FillColor = C.Blue; hl.FillTransparency = 0.65
+            hl.OutlineColor = C.Blue; hl.OutlineTransparency = 0.3
+            hl.Adornee = item; hl.Parent = CoreGui
             table.insert(S.Highlights["items"], hl)
             local part = item:IsA("Model") and (item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart")) or item
             if part then
-                local bb = Instance.new("BillboardGui"); bb.Size = UDim2.new(0, 90, 0, 20); bb.StudsOffset = Vector3.new(0, 2.5, 0); bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 1, 0); l.BackgroundColor3 = Color3.fromRGB(8, 12, 25); l.BackgroundTransparency = 0.2; l.Text = "📦 " .. item.Name; l.TextColor3 = C.Blue; l.Font = C.FontMed; l.TextSize = 10; l.TextTruncate = Enum.TextTruncate.AtEnd; l.Parent = bb; corner(l, UDim.new(0, 4))
+                local bb = Instance.new("BillboardGui")
+                bb.Size = UDim2.new(0, 90, 0, 20); bb.StudsOffset = Vector3.new(0, 2.5, 0)
+                bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
+                local l = Instance.new("TextLabel")
+                l.Size = UDim2.new(1, 0, 1, 0)
+                l.BackgroundColor3 = Color3.fromRGB(8, 12, 25); l.BackgroundTransparency = 0.2
+                l.Text = "📦 " .. item.Name; l.TextColor3 = C.Blue
+                l.Font = C.FontMed; l.TextSize = 10; l.TextTruncate = Enum.TextTruncate.AtEnd; l.Parent = bb
+                corner(l, UDim.new(0, 4))
                 table.insert(S.Billboards["items"], bb)
             end
         end
-        local function scan() clearHL("items"); S.Highlights["items"] = {}; S.Billboards["items"] = {}; local f = Workspace:FindFirstChild("Items"); if f then for _, ch in pairs(f:GetChildren()) do pcall(hlItem, ch) end end end
+
+        local function scan()
+            clearHL("items"); S.Highlights["items"] = {}; S.Billboards["items"] = {}
+            local f = Workspace:FindFirstChild("Items")
+            if f then for _, ch in pairs(f:GetChildren()) do pcall(hlItem, ch) end end
+        end
         scan()
         local f = Workspace:FindFirstChild("Items")
         if f then
-            addConn("item_a", f.ChildAdded:Connect(function() task.wait(0.1); if S.Features["Item ESP"] then pcall(scan) end end))
-            addConn("item_r", f.ChildRemoved:Connect(function() task.wait(0.1); if S.Features["Item ESP"] then pcall(scan) end end))
+            addConn("item_a", f.ChildAdded:Connect(function() task.wait(0.1) if S.Features["Item ESP"] then pcall(scan) end end))
+            addConn("item_r", f.ChildRemoved:Connect(function() task.wait(0.1) if S.Features["Item ESP"] then pcall(scan) end end))
         end
     end)
 
+    -- Door Tracker
     makeToggle(espPage, "Door Tracker", "Highlight all interactable doors", 5, function(on)
         clearHL("doors")
         if not on then return end
@@ -1855,19 +1631,31 @@ local function buildHub()
         if not df then notify("⚠ Doors folder not found", C.Yellow) return end
         for _, dm in pairs(df:GetChildren()) do
             if dm:IsA("Model") then
-                local hl = Instance.new("Highlight"); hl.FillColor = C.Yellow; hl.FillTransparency = 0.75; hl.OutlineColor = C.Yellow; hl.OutlineTransparency = 0.4; hl.Adornee = dm; hl.Parent = CoreGui
+                local hl = Instance.new("Highlight")
+                hl.FillColor = C.Yellow; hl.FillTransparency = 0.75
+                hl.OutlineColor = C.Yellow; hl.OutlineTransparency = 0.4
+                hl.Adornee = dm; hl.Parent = CoreGui
                 table.insert(S.Highlights["doors"], hl)
                 local part = dm:FindFirstChildWhichIsA("BasePart", true)
                 if part then
-                    local bb = Instance.new("BillboardGui"); bb.Size = UDim2.new(0, 80, 0, 20); bb.StudsOffset = Vector3.new(0, 3, 0); bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                    local l = Instance.new("TextLabel"); l.Size = UDim2.new(1, 0, 1, 0); l.BackgroundColor3 = Color3.fromRGB(25, 20, 5); l.BackgroundTransparency = 0.25; l.Text = "🚪 " .. dm.Name; l.TextColor3 = C.Yellow; l.Font = C.FontMed; l.TextSize = 10; l.Parent = bb; corner(l, UDim.new(0, 4))
+                    local bb = Instance.new("BillboardGui")
+                    bb.Size = UDim2.new(0, 80, 0, 20); bb.StudsOffset = Vector3.new(0, 3, 0)
+                    bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
+                    local l = Instance.new("TextLabel")
+                    l.Size = UDim2.new(1, 0, 1, 0)
+                    l.BackgroundColor3 = Color3.fromRGB(25, 20, 5); l.BackgroundTransparency = 0.25
+                    l.Text = "🚪 " .. dm.Name; l.TextColor3 = C.Yellow
+                    l.Font = C.FontMed; l.TextSize = 10; l.Parent = bb
+                    corner(l, UDim.new(0, 4))
                     table.insert(S.Billboards["doors"], bb)
                 end
             end
         end
     end)
 
-    -- ═══════ PAGE: EVIDENCE ═══════
+    -- ═══════════════════════════════════════
+    --   PAGE: EVIDENCE
+    -- ═══════════════════════════════════════
     local evidPage = makePage("Evidence")
 
     -- Evidence ESP
@@ -2954,38 +2742,28 @@ local function buildHub()
         notify("📡 Logging remotes", C.Accent, 3)
     end)
 
-    -- ═══════ NAVIGATION SWITCHING ═══════
-    local function switchNav(name)
-        currentNav = name
-        dashPage.Visible = (name == "Home")
+    -- ═══════════════════════════════════════
+    --   CATEGORY SWITCHING
+    -- ═══════════════════════════════════════
+    local function switchCat(name)
+        currentCat = name
         for n, pg in pairs(pages) do pg.Visible = (n == name) end
-        for n, btn in pairs(navBtns) do
-            local bg = btn.BackgroundColor3
+        for n, d in pairs(sideBtns) do
             if n == name then
-                tw(btn, {BackgroundTransparency = 0.1}, C.Speed)
-                stroke(btn, C.Accent, 1, 0.2)
+                tw(d.button, {BackgroundTransparency = 0.8}, C.Speed)
+                tw(d.label, {TextColor3 = C.AccentBright}, C.Speed)
             else
-                tw(btn, {BackgroundTransparency = 0.5}, C.Speed)
-                local s = btn:FindFirstChildWhichIsA("UIStroke")
-                if s then s:Destroy() end
+                tw(d.button, {BackgroundTransparency = 1}, C.Speed)
+                tw(d.label, {TextColor3 = C.Text2}, C.Speed)
             end
         end
-        if name == "Home" then
-            tw(homeBtn, {BackgroundTransparency = 0.1}, C.Speed)
-            stroke(homeBtn, C.Accent, 1, 0.2)
-        else
-            tw(homeBtn, {BackgroundTransparency = 0.45}, C.Speed)
-            local s = homeBtn:FindFirstChildWhichIsA("UIStroke")
-            if s then s:Destroy() end
-        end
-        if name == "Abilities" and updateAbilityPanel then updateAbilityPanel() end
     end
+    if name == "Abilities" and updateAbilityPanel then updateAbilityPanel() end
 
-    for name, btn in pairs(navBtns) do
-        btn.MouseButton1Click:Connect(function() switchNav(name) end)
+    for name, d in pairs(sideBtns) do
+        d.button.MouseButton1Click:Connect(function() switchCat(name) end)
     end
-    homeBtn.MouseButton1Click:Connect(function() switchNav("Home") end)
-    switchNav("Home")
+    switchCat("ESP")
 
     -- ═══════════════════════════════════════
     --   UPDATE FUNCTIONS
@@ -3082,7 +2860,9 @@ local function buildHub()
     updateEvidencePanel()
     updateHUD()
 
-    -- ═══════ WINDOW CONTROLS ═══════
+    -- ═══════════════════════════════════════
+    --   WINDOW CONTROLS
+    -- ═══════════════════════════════════════
     closeBtn.MouseButton1Click:Connect(function()
         for k, c in pairs(S.Conns) do pcall(function() c:Disconnect() end) end
         for t, _ in pairs(S.Highlights) do clearHL(t) end
@@ -3090,7 +2870,7 @@ local function buildHub()
         if S._origLight then for k, v in pairs(S._origLight) do pcall(function() Lighting[k] = v end) end end
         if S._origFog then pcall(function() Lighting.FogEnd = S._origFog.FogEnd; Lighting.FogStart = S._origFog.FogStart end) end
         pcall(function() if EvidHudGui then EvidHudGui:Destroy() end end)
-        tw(MainFrame, {Size = UDim2.new(0, W, 0, 0), BackgroundTransparency = 1}, 0.3)
+        tw(MainFrame, {Size = UDim2.new(0, 620, 0, 0), BackgroundTransparency = 1}, 0.3)
         task.wait(0.35)
         Hub:Destroy()
     end)
@@ -3099,9 +2879,9 @@ local function buildHub()
         S.Visible = not S.Visible
         if S.Visible then
             MainFrame.Visible = true
-            tw(MainFrame, {Size = UDim2.new(0, W, 0, H)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            tw(MainFrame, {Size = UDim2.new(0, 620, 0, 480)}, 0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
         else
-            tw(MainFrame, {Size = UDim2.new(0, W, 0, 50)}, 0.2)
+            tw(MainFrame, {Size = UDim2.new(0, 620, 0, 44)}, 0.2)
         end
     end)
 
@@ -3112,7 +2892,7 @@ local function buildHub()
             if S.Visible then
                 MainFrame.Visible = true
                 MainFrame.BackgroundTransparency = 0.6
-                tw(MainFrame, {BackgroundTransparency = 0.18}, 0.25)
+                tw(MainFrame, {BackgroundTransparency = 0.12}, 0.25)
             else
                 tw(MainFrame, {BackgroundTransparency = 1}, 0.2)
                 task.wait(0.25)
@@ -3126,7 +2906,7 @@ local function buildHub()
     MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
     MainFrame.BackgroundTransparency = 0.8
     task.wait(0.1)
-    tw(MainFrame, {BackgroundTransparency = 0.18, Size = UDim2.new(0, W, 0, H), Position = UDim2.new(0.5, -W/2, 0.5, -H/2)}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    tw(MainFrame, {BackgroundTransparency = 0.12, Size = UDim2.new(0, 620, 0, 480), Position = UDim2.new(0.5, -310, 0.5, -240)}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
     task.wait(0.6)
     notify("🕯 Demonology Hub v5.0 loaded", C.Accent, 4)
