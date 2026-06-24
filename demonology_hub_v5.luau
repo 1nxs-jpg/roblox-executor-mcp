@@ -47,6 +47,9 @@ local function showKeySystem()
     if not player then
         player = game:GetService("Players").PlayersAdded:Wait()
     end
+    local UIS = game:GetService("UserInputService")
+    UIS.MouseBehavior = Enum.MouseBehavior.Default
+    UIS.MouseIconEnabled = true
 
     local keyGui = Instance.new("ScreenGui")
     keyGui.Name = "1nxsKeySystem"
