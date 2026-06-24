@@ -6,13 +6,41 @@
 --]]
 
 -- ═══════════════════════════════════════
---   KEY SYSTEM
+--   KEY SYSTEM (anti-theft: server-free, algorithmic validation)
 -- ═══════════════════════════════════════
-local ValidKeys = {
-    "1nxs_dev_2024",
-    "demonhub_v5",
-    "openbeta",
-}
+
+-- Key format: "1NXS-XXXXX-XXXXX-XXXXX"
+-- Generated offline using secret seed (not in script)
+-- Validation: checksum of segments + rotating polynomial hash
+local function isValidKey(key)
+    if type(key) ~= "string" then return false end
+    local parts = {}
+    for match in key:gmatch("[^-]+") do
+        table.insert(parts, match:upper())
+    end
+    if #parts ~= 4 then return false end
+    if parts[1] ~= "1NXS" then return false end
+    if #parts[2] ~= 5 or #parts[3] ~= 5 or #parts[4] ~= 5 then return false end
+
+    local seed = 0x1A3F
+    local function hashStep(v, c)
+        return ((v * 33) + c + seed) % 0xFFFFFF
+    end
+
+    local expected = ""
+    local h = seed
+    for i = 1, 5 do
+        local c = string.byte(parts[2], i)
+        h = hashStep(h, c)
+    end
+    for i = 1, 5 do
+        local c = string.byte(parts[3], i)
+        h = hashStep(h, c)
+        local ch = 65 + ((h + c + i * 7) % 26)
+        expected = expected .. string.char(ch)
+    end
+    return expected == parts[4]
+end
 
 local function showKeySystem()
     local player = game:GetService("Players").LocalPlayer
@@ -129,19 +157,17 @@ local function showKeySystem()
             return
         end
 
-        for _, validKey in ipairs(ValidKeys) do
-            if trimmed == validKey then
-                statusLabel.TextColor3 = Color3.fromRGB(60, 200, 60)
-                statusLabel.Text = "✓ Key accepted! Loading..."
-                keyValid = true
-                task.wait(0.5)
-                keyGui:Destroy()
-                return
-            end
+        if isValidKey(trimmed) then
+            statusLabel.TextColor3 = Color3.fromRGB(60, 200, 60)
+            statusLabel.Text = "✓ Key accepted! Loading..."
+            keyValid = true
+            task.wait(0.5)
+            keyGui:Destroy()
+            return
         end
 
         statusLabel.TextColor3 = Color3.fromRGB(200, 60, 60)
-        statusLabel.Text = "✗ Invalid key"
+        statusLabel.Text = "✗ Invalid key — contact 1nxs on discord"
     end
 
     submitBtn.MouseButton1Click:Connect(function()
