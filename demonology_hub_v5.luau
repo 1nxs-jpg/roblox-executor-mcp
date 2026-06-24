@@ -55,7 +55,10 @@ local function showKeySystem()
     keyGui.Name = "1nxsKeySystem"
     keyGui.ResetOnSpawn = false
     keyGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    keyGui.Parent = player:WaitForChild("PlayerGui")
+    keyGui.DisplayOrder = 999
+    local parent = game:GetService("CoreGui")
+    if not parent then parent = player:WaitForChild("PlayerGui") end
+    keyGui.Parent = parent
 
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
