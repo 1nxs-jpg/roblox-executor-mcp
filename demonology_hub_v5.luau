@@ -161,6 +161,7 @@ local function showKeySystem()
             statusLabel.TextColor3 = Color3.fromRGB(60, 200, 60)
             statusLabel.Text = "✓ Key accepted! Loading..."
             keyValid = true
+            saveKey(trimmed)
             task.wait(0.5)
             keyGui:Destroy()
             return
@@ -188,15 +189,52 @@ local function showKeySystem()
     return keyValid
 end
 
--- Run key system (skip if already authed this session)
-if not _G["1NXS_AUTHENTICATED"] then
+-- Key persistence: save/load key with 24h expiry
+local KEY_FILE = "1nxs_hub_key.dat"
+local function loadSavedKey()
+    local ok, saved = pcall(function()
+        if not isfile then return nil end
+        if not isfile(KEY_FILE) then return nil end
+        local data = readfile(KEY_FILE)
+        local parsed = game:GetService("HttpService"):JSONDecode(data)
+        if type(parsed) ~= "table" or type(parsed.key) ~= "string" or type(parsed.expiry) ~= "number" then
+            return nil
+        end
+        if tick() >= parsed.expiry then
+            delfile(KEY_FILE)
+            return nil
+        end
+        return parsed.key
+    end)
+    return ok
+end
+local function saveKey(key)
+    pcall(function()
+        if not writefile then return end
+        local expiry = tick() + 86400
+        local data = game:GetService("HttpService"):JSONEncode({key = key, expiry = expiry})
+        writefile(KEY_FILE, data)
+    end)
+end
+
+-- Run key system (skip if already authed this session or saved key valid)
+local function needsKey()
+    if _G["1NXS_AUTHENTICATED"] then return false end
+    local saved = loadSavedKey()
+    if saved and isValidKey(saved) then
+        _G["1NXS_AUTHENTICATED"] = true
+        return false
+    end
+    return true
+end
+if needsKey() then
     local success = pcall(showKeySystem)
     if not success then
         print("[1nxs Hub] ❌ Key validation failed or cancelled")
         return
     end
-    _G["1NXS_AUTHENTICATED"] = true
 end
+_G["1NXS_AUTHENTICATED"] = true
 
 -- ═══════════════════════════════════════
 --   SERVICES
