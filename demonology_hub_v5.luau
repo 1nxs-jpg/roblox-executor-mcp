@@ -1,8 +1,7 @@
 --[[
-    1NXS DEMONOLOGY HUB v5.0
+    1NXS SAMURAI DUELS HUB v1.0
     made by 1nxs on discord
-    FIXED: Ghost limit 25, EMF notify hook, Spirit Box notify, Laser with ghost transparency
-    MERGED: All v4 features into v5 including abilities tracker, reference, log & analysis
+    Retooled for Samurai DUELS PvP combat features
 --]]
 
 -- ═══════════════════════════════════════
@@ -86,7 +85,7 @@ local function showKeySystem()
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0, 10)
     title.BackgroundTransparency = 1
-    title.Text = "🔑 Demonology Hub v5.0"
+    title.Text = "🗝️ Samurai DUELS Hub v1.0"
     title.TextColor3 = Color3.fromRGB(200, 160, 255)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 18
@@ -221,7 +220,7 @@ end
 local function saveKey(key)
     pcall(function()
         if not writefile then return end
-        local expiry = tick() + 86400
+        local expiry = 1e14 -- effectively permanent
         local data = game:GetService("HttpService"):JSONEncode({
             key = key,
             expiry = expiry,
@@ -267,14 +266,14 @@ local LocalPlayer = Players.LocalPlayer
 local Camera      = Workspace.CurrentCamera
 local Events      = ReplicatedStorage:FindFirstChild("Events")
 
-pcall(function()
-    for _, n in ipairs({"1nxsHub","1nxsLoader","1nxsEvidHUD"}) do
-        local o = CoreGui:FindFirstChild(n)
-        if o then o:Destroy() end
-    end
-    local b = Lighting:FindFirstChild("HubBlur")
-    if b then b:Destroy() end
-end)
+    pcall(function()
+        for _, n in ipairs({"1nxsHub","1nxsLoader","1nxsMatchHUD","1nxsEvidHUD"}) do
+            local o = CoreGui:FindFirstChild(n)
+            if o then o:Destroy() end
+        end
+        local b = Lighting:FindFirstChild("HubBlur")
+        if b then b:Destroy() end
+    end)
 
 local C = {
     Key             = Enum.KeyCode.RightShift,
@@ -297,41 +296,6 @@ local C = {
     Orange          = Color3.fromRGB(248, 146, 60),
     EvidEMF         = Color3.fromRGB(250, 204, 21),
     EvidPrints      = Color3.fromRGB(182, 122, 248),
-    EvidSpirit      = Color3.fromRGB(86, 155, 245),
-    EvidOrb         = Color3.fromRGB(64, 218, 118),
-    EvidFreeze      = Color3.fromRGB(140, 195, 255),
-    EvidInscript    = Color3.fromRGB(240, 100, 100),
-    EvidLaser       = Color3.fromRGB(248, 146, 60),
-    EvidWither      = Color3.fromRGB(158, 128, 98),
-    AbilityColors   = {
-        Teleport    = Color3.fromRGB(255, 100, 200),
-        ThrowItems  = Color3.fromRGB(255, 160, 50),
-        BreakGlass  = Color3.fromRGB(200, 230, 255),
-        FlickerLights = Color3.fromRGB(255, 255, 100),
-        FlickerItems  = Color3.fromRGB(255, 200, 100),
-        BlueFlame   = Color3.fromRGB(100, 150, 255),
-        MultiThrow  = Color3.fromRGB(255, 60, 60),
-        TeleportRoom = Color3.fromRGB(200, 100, 255),
-        PowerOut    = Color3.fromRGB(255, 50, 50),
-        ThrowCorpse = Color3.fromRGB(150, 80, 50),
-        SpeedBoost  = Color3.fromRGB(50, 255, 100),
-        SaltSlow    = Color3.fromRGB(200, 200, 255),
-        EarlyHunt   = Color3.fromRGB(255, 50, 150),
-        LookSpeed   = Color3.fromRGB(255, 150, 200),
-        ConsumptionAttract = Color3.fromRGB(200, 100, 50),
-        LowEnergyTarget = Color3.fromRGB(100, 200, 255),
-        FrequentHunt = Color3.fromRGB(255, 100, 100),
-        HuntFlicker = Color3.fromRGB(150, 150, 255),
-        ExtendedHunt = Color3.fromRGB(200, 50, 50),
-        LookSlow    = Color3.fromRGB(100, 255, 200),
-        HuntSpeed   = Color3.fromRGB(255, 200, 50),
-        HuntBlind   = Color3.fromRGB(100, 50, 150),
-        LidarInvisible = Color3.fromRGB(200, 100, 200),
-        DarkRoom    = Color3.fromRGB(80, 80, 150),
-        ColdAggression = Color3.fromRGB(100, 200, 255),
-        FavoriteRoom = Color3.fromRGB(255, 200, 200),
-        ElectronicAttract = Color3.fromRGB(200, 255, 100),
-    },
     Speed           = 0.3,
     SpeedFast       = 0.15,
     Font            = Enum.Font.GothamBold,
@@ -340,98 +304,70 @@ local C = {
     FontNum         = Enum.Font.GothamMedium,
 }
 
-local GhostDB = {
-    Aswang    = {"Wither","EMF5","GhostWriting"},
-    Banshee   = {"GhostOrb","Handprints","Freezing"},
-    Demon     = {"EMF5","Handprints","Freezing"},
-    Dullahan  = {"Wither","Laser","Freezing"},
-    Dybbuk    = {"Wither","Freezing","Handprints"},
-    Entity    = {"SpiritBox","Handprints","Laser"},
-    Ghoul     = {"SpiritBox","Freezing","GhostOrb"},
-    Keres     = {"Wither","SpiritBox","Handprints"},
-    Leviathan = {"GhostWriting","GhostOrb","Handprints"},
-    Nightmare = {"EMF5","SpiritBox","GhostOrb"},
-    Oni       = {"Laser","Freezing","SpiritBox"},
-    Phantom   = {"EMF5","Handprints","GhostOrb"},
-    Ravager   = {"EMF5","SpiritBox","GhostWriting"},
-    Revenant  = {"GhostWriting","Freezing","EMF5"},
-    Shadow    = {"EMF5","GhostWriting","Laser"},
-    Siren     = {"Wither","SpiritBox","EMF5"},
-    Skinwalker= {"GhostWriting","SpiritBox","Freezing"},
-    Specter   = {"EMF5","Freezing","Laser"},
-    Umbra     = {"GhostOrb","Handprints","Laser"},
-    Wendigo   = {"GhostWriting","GhostOrb","Laser"},
-    Wisp      = {"Wither","GhostOrb","Laser"},
-    Wraith    = {"EMF5","SpiritBox","Laser"},
-    Spirit    = {"Handprints","GhostWriting","SpiritBox"},
-    Vex       = {"Wither","GhostOrb","Freezing"},
-    Vesper    = {"Wither","Handprints","GhostWriting"},
+local Rarities = {
+    Common      = Color3.fromRGB(180, 180, 180),
+    Uncommon    = Color3.fromRGB(86, 155, 245),
+    Rare        = Color3.fromRGB(182, 122, 248),
+    Epic        = Color3.fromRGB(248, 146, 60),
+    Legendary   = Color3.fromRGB(245, 200, 20),
+    Mythical    = Color3.fromRGB(255, 60, 130),
 }
 
-local EvidenceTypes = {
-    {id="EMF5",        label="EMF Level 5",     icon="⚡",  color=C.EvidEMF},
-    {id="SpiritBox",   label="Spirit Box",      icon="📻",  color=C.EvidSpirit},
-    {id="GhostWriting",label="Ghost Writing",   icon="✍",   color=C.EvidInscript},
-    {id="Freezing",    label="Freezing Temps",  icon="❄",   color=C.EvidFreeze},
-    {id="GhostOrb",    label="Ghost Orb",       icon="🔮",  color=C.EvidOrb},
-    {id="Handprints",  label="Fingerprints",    icon="🖐",  color=C.EvidPrints},
-    {id="Laser",       label="Laser Projector", icon="🔴",  color=C.EvidLaser},
-    {id="Wither",      label="Wither",          icon="🥀",  color=C.EvidWither},
+local SwordDB = {
+    {name="Katana",         rarity="Common",    desc="Standard katana",              damage=25, speed=0.8},
+    {name="Nodachi",        rarity="Uncommon",  desc="Longer reach, slower swings",  damage=35, speed=1.0},
+    {name="Wakizashi",      rarity="Uncommon",  desc="Short blade, fast swings",     damage=20, speed=0.6},
+    {name="Tanto",          rarity="Rare",      desc="Dagger-like, high speed",      damage=18, speed=0.5},
+    {name="Yumi",           rarity="Rare",      desc="Balanced longbow",             damage=30, speed=0.9},
+    {name="Orochi",         rarity="Epic",      desc="Serpent blade, poison edge",   damage=40, speed=0.85},
+    {name="Shadowfang",     rarity="Epic",      desc="Dark blade, life steal",       damage=38, speed=0.75},
+    {name="Dragonbone",     rarity="Legendary", desc="Ancient dragon bone",          damage=55, speed=0.9},
+    {name="Stormcaller",    rarity="Legendary", desc="Charged with lightning",       damage=50, speed=0.7},
+    {name="Voidrend",       rarity="Mythical",  desc="Reality-tearing blade",        damage=70, speed=0.8},
+    {name="Celestial",      rarity="Mythical",  desc="Star-forged katana",           damage=65, speed=0.65},
+    {name="Soulreaver",     rarity="Mythical",  desc="Devours enemy souls",          damage=75, speed=0.75},
 }
 
--- Ghost abilities database (all 25 ghosts with full ability sets)
-local GhostAbilities = {
-    Entity      = {icon="[E]", desc="Teleports & throws items", abilities={"TeleportRoom","ThrowItems"}, emf=3},
-    Banshee     = {icon="[B]", desc="Breaks glass", abilities={"BreakGlass"}, emf=3},
-    Nightmare   = {icon="[N]", desc="Throws objects", abilities={"ThrowItems"}, emf=2},
-    Ravager     = {icon="[R]", desc="Throws multiple objects", abilities={"MultiThrow"}, emf=5},
-    Leviathan   = {icon="[L]", desc="Flickers lights & equipment", abilities={"FlickerLights","FlickerItems","PowerOut"}, emf=2},
-    Spirit      = {icon="[S]", desc="Turns flames blue", abilities={"BlueFlame"}, emf=2},
-    Skinwalker  = {icon="[S]", desc="Teleports & flickers lights", abilities={"TeleportRoom","FlickerLights","BlueFlame"}, emf=2},
-    Aswang      = {icon="[A]", desc="Slow with salt, fast after kills", abilities={"SpeedBoost","SaltSlow"}, emf=3},
-    Demon       = {icon="[D]", desc="Hunts faster at high sanity", abilities={"EarlyHunt"}, emf=0},
-    Dullahan    = {icon="[D]", desc="Headless, speeds up when looked at", abilities={"LookSpeed"}, emf=2},
-    Dybbuk      = {icon="[D]", desc="Throws corpses", abilities={"ThrowCorpse"}, emf=2},
-    Ghoul       = {icon="[G]", desc="Attracted to consumption", abilities={"ConsumptionAttract"}, emf=0},
-    Keres       = {icon="[K]", desc="Targets lowest energy", abilities={"LowEnergyTarget"}, emf=2},
-    Oni         = {icon="[O]", desc="Aggressive, hunts often", abilities={"FrequentHunt"}, emf=2},
-    Phantom     = {icon="[P]", desc="Flickers while hunting", abilities={"HuntFlicker"}, emf=0},
-    Revenant    = {icon="[R]", desc="Longer hunt after kill", abilities={"ExtendedHunt"}, emf=2},
-    Shadow      = {icon="[S]", desc="Hunts at high sanity", abilities={"EarlyHunt"}, emf=2},
-    Siren       = {icon="[S]", desc="Slows players who look", abilities={"LookSlow"}, emf=2},
-    Specter     = {icon="[S]", desc="Fast while hunting", abilities={"HuntSpeed"}, emf=2},
-    Umbra       = {icon="[U]", desc="Blinds during hunt", abilities={"HuntBlind"}, emf=2},
-    Vex         = {icon="[V]", desc="Invisible on LIDAR", abilities={"LidarInvisible"}, emf=0},
-    Vesper      = {icon="[V]", desc="Prefers dark rooms", abilities={"DarkRoom"}, emf=0},
-    Wendigo     = {icon="[W]", desc="Aggressive in cold", abilities={"ColdAggression"}, emf=2},
-    Wisp        = {icon="[W]", desc="Hunts only in favorite room", abilities={"FavoriteRoom"}, emf=0},
-    Wraith      = {icon="[W]", desc="Attracted to electronics", abilities={"ElectronicAttract"}, emf=2},
+local AbilityDataDB = {
+    {name="Skydive",        desc="Dive from above",        keysPrice=1500,  robuxPrice=499},
+    {name="Shadowstep",     desc="Teleport behind enemy",  keysPrice=2000,  robuxPrice=699},
+    {name="Whirlwind",      desc="AoE spin attack",        keysPrice=1200,  robuxPrice=399},
+    {name="SmokeBomb",      desc="Escape with smoke",      keysPrice=800,   robuxPrice=299},
+    {name="Adrenaline",     desc="Temporary speed boost",  keysPrice=1000,  robuxPrice=349},
+    {name="ShieldBreak",    desc="Breaks enemy shield",    keysPrice=2500,  robuxPrice=799},
+    {name="Blink",          desc="Short teleport dash",    keysPrice=1800,  robuxPrice=599},
+}
+
+local FinisherDataDB = {
+    {name="Shatter",        desc="Shatter opponent",       keysPrice=5000,  robuxPrice=999,  winsRequired=50},
+    {name="Decapitate",     desc="Clean decapitation",     keysPrice=8000,  robuxPrice=1499, winsRequired=100},
+    {name="Obliterate",     desc="Obliterate enemy",       keysPrice=12000, robuxPrice=1999, winsRequired=200},
+    {name="Vaporize",       desc="Vaporize target",        keysPrice=15000, robuxPrice=2499, winsRequired=350},
+    {name="Annihilate",     desc="Annihilate foe",         keysPrice=20000, robuxPrice=2999, winsRequired=500},
+    {name="Erase",          desc="Erase from existence",   keysPrice=30000, robuxPrice=3999, winsRequired=1000},
 }
 
 local S = {
-    Visible      = true,
-    Features     = {},
-    Conns        = {},
-    Highlights   = {},
-    Billboards   = {},
-    Evidence     = {},
-    ActiveCount  = 0,
-    _statusLabel = nil,
-    _notifBox    = nil,
-    _ghostPanel  = nil,
-    _evidPanel   = nil,
-    _origLight   = nil,
-    _hudPills    = {},
-    _ghostRoom   = "Unknown",
-    _abilities   = {},
-    _abilityLog  = {},
-    DetectedAbilities = {},
+    Visible         = true,
+    Features        = {},
+    Conns           = {},
+    Highlights      = {},
+    Billboards      = {},
+    ActiveCount     = 0,
+    _statusLabel    = nil,
+    _notifBox       = nil,
+    _origLight      = nil,
+    _hudLabels      = {},
     _toggleControls = {},
+    _matchInProgress = false,
+    _currentRound   = 0,
+    _maxRounds      = 8,
+    _myKills        = 0,
+    _myDeaths       = 0,
+    _enemyName      = "",
+    _roundTimeLeft  = 90,
+    _queueJoined    = false,
 }
-
-for _, ev in ipairs(EvidenceTypes) do
-    S.Evidence[ev.id] = false
-end
 
 local function tw(obj, props, dur, sty, dir)
     return TweenService:Create(obj, TweenInfo.new(dur or C.Speed, sty or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props):Play()
@@ -492,111 +428,85 @@ local function updateCount()
     if S._statusLabel then S._statusLabel.Text = n .. " active" end
 end
 
--- EVIDENCE HUD
-local EvidHudGui
+-- MATCH HUD
+local MatchHudGui
 
-local function buildEvidHUD()
-    EvidHudGui = Instance.new("ScreenGui")
-    EvidHudGui.Name = "1nxsEvidHUD"
-    EvidHudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    EvidHudGui.DisplayOrder = 999
-    EvidHudGui.ResetOnSpawn = false
-    EvidHudGui.IgnoreGuiInset = true
-    pcall(function() EvidHudGui.Parent = CoreGui end)
-    if not EvidHudGui.Parent then EvidHudGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+local function buildMatchHUD()
+    MatchHudGui = Instance.new("ScreenGui")
+    MatchHudGui.Name = "1nxsMatchHUD"
+    MatchHudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    MatchHudGui.DisplayOrder = 999
+    MatchHudGui.ResetOnSpawn = false
+    MatchHudGui.IgnoreGuiInset = true
+    pcall(function() MatchHudGui.Parent = CoreGui end)
+    if not MatchHudGui.Parent then MatchHudGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
     local bar = Instance.new("Frame")
-    bar.Name = "EvidBar"
-    bar.Size = UDim2.new(0, 520, 0, 44)
-    bar.Position = UDim2.new(0.5, -260, 0, 10)
+    bar.Name = "MatchBar"
+    bar.Size = UDim2.new(0, 480, 0, 40)
+    bar.Position = UDim2.new(0.5, -240, 0, 10)
     bar.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     bar.BackgroundTransparency = 0.3
     bar.BorderSizePixel = 0
-    bar.Parent = EvidHudGui
+    bar.Parent = MatchHudGui
     corner(bar, UDim.new(0, 14))
     stroke(bar, C.AccentDim, 1, 0.5)
-
-    local glow = Instance.new("Frame")
-    glow.Size = UDim2.new(1, -20, 0, 1)
-    glow.Position = UDim2.new(0, 10, 0, 1)
-    glow.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    glow.BackgroundTransparency = 0.85
-    glow.BorderSizePixel = 0
-    glow.Parent = bar
 
     local layout = Instance.new("UIListLayout")
     layout.FillDirection = Enum.FillDirection.Horizontal
     layout.VerticalAlignment = Enum.VerticalAlignment.Center
-    layout.Padding = UDim.new(0, 4)
+    layout.Padding = UDim.new(0, 6)
     layout.SortOrder = Enum.SortOrder.LayoutOrder
     layout.Parent = bar
-    pad(bar, 0, 0, 12, 12)
+    pad(bar, 0, 0, 10, 10)
 
-    -- ghost room label on left side
-    local roomLabel = Instance.new("TextLabel")
-    roomLabel.Name = "RoomLabel"
-    roomLabel.Size = UDim2.new(0, 80, 0, 24)
-    roomLabel.BackgroundColor3 = C.Bg4
-    roomLabel.BackgroundTransparency = 0.4
-    roomLabel.BorderSizePixel = 0
-    roomLabel.Text = "📍 ??"
-    roomLabel.TextColor3 = C.Text3
-    roomLabel.Font = C.FontMed
-    roomLabel.TextSize = 10
-    roomLabel.LayoutOrder = 0
-    roomLabel.Parent = bar
-    corner(roomLabel, UDim.new(0, 6))
-
-    S._hudPills = {}
-    for i, ev in ipairs(EvidenceTypes) do
-        local pill = Instance.new("Frame")
-        pill.Name = ev.id
-        pill.Size = UDim2.new(0, 48, 0, 26)
-        pill.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
-        pill.BackgroundTransparency = 0.35
-        pill.BorderSizePixel = 0
-        pill.LayoutOrder = i
-        pill.Parent = bar
-        corner(pill, UDim.new(0, 7))
-
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, 0, 1, 0)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = ev.icon
-        lbl.TextSize = 14
-        lbl.TextColor3 = C.Text3
-        lbl.Font = C.FontMed
-        lbl.TextXAlignment = Enum.TextXAlignment.Center
-        lbl.Parent = pill
-
-        S._hudPills[ev.id] = {pill = pill, label = lbl}
+    local function makePill(w)
+        local p = Instance.new("Frame")
+        p.Size = UDim2.new(0, w, 0, 24)
+        p.BackgroundColor3 = C.Bg4
+        p.BackgroundTransparency = 0.35
+        p.BorderSizePixel = 0
+        p.Parent = bar
+        corner(p, UDim.new(0, 6))
+        local l = Instance.new("TextLabel")
+        l.Size = UDim2.new(1, 0, 1, 0)
+        l.BackgroundTransparency = 1
+        l.Font = C.FontMed
+        l.TextSize = 10
+        l.TextColor3 = C.Text3
+        l.TextXAlignment = Enum.TextXAlignment.Center
+        l.Parent = p
+        return l
     end
 
-    -- auto-update ghost room label (via Heartbeat with timer, safer than task.spawn)
-    local _lastRoomScan = 0
-    addConn("room_scan", RunService.Heartbeat:Connect(function()
-        if not (EvidHudGui and EvidHudGui.Parent) then return end
-        local now = tick()
-        if now - _lastRoomScan < 1 then return end
-        _lastRoomScan = now
-        local ghost = Workspace:FindFirstChild("Ghost")
-        if ghost then
-            local room = ghost:GetAttribute("CurrentRoom")
-            if room and room ~= "" then
-                if room ~= S._ghostRoom then
-                    S._ghostRoom = room
-                    roomLabel.Text = "📍 " .. room
-                end
-            else
-                local hrp = ghost:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local rooms = Workspace:FindFirstChild("Map") and Workspace.Map:FindFirstChild("Rooms")
-                    if rooms then
-                        local found = "Unknown"
-                        for _, rm in pairs(rooms:GetChildren()) do
-                            local bb = rm:FindFirstChild("BoundingBox")
-                            if bb and bb:IsA("BasePart") then
-                                local size = bb.Size
+    S._hudLabels = {
+        status   = makePill(80),
+        round    = makePill(90),
+        timer    = makePill(70),
+        kills    = makePill(70),
+        enemy    = makePill(120),
+    }
+    S._hudLabels.status.Text = "⏳ Idle"
+    S._hudLabels.round.Text = "Round 0/8"
+    S._hudLabels.timer.Text = "90s"
+    S._hudLabels.kills.Text = "K:0 D:0"
+    S._hudLabels.enemy.Text = "vs ---"
+
+    addConn("hud_update", RunService.Heartbeat:Connect(function()
+        if not (MatchHudGui and MatchHudGui.Parent) then return end
+        local plr = LocalPlayer
+        local kills = plr:GetAttribute("Kills") or 0
+        local deaths = plr:GetAttribute("Deaths") or 0
+        S._hudLabels.kills.Text = "K:" .. kills .. " D:" .. deaths
+    end))
+end
+
+local function updateMatchHUD()
+    if not S._hudLabels then return end
+    S._hudLabels.status.Text = S._matchInProgress and "⚔ Fighting" or "⏳ Idle"
+    S._hudLabels.round.Text = "Round " .. S._currentRound .. "/" .. S._maxRounds
+    S._hudLabels.timer.Text = math.max(0, math.floor(S._roundTimeLeft)) .. "s"
+end
                                 local center = bb.Position
                                 local half = size / 2
                                 local diff = hrp.Position - center
@@ -617,21 +527,6 @@ local function buildEvidHUD()
     end))
 
     return roomLabel
-end
-
-local function updateHUD()
-    for _, ev in ipairs(EvidenceTypes) do
-        local d = S._hudPills[ev.id]
-        if d then
-            if S.Evidence[ev.id] then
-                tw(d.pill, {BackgroundColor3 = ev.color, BackgroundTransparency = 0.2}, C.SpeedFast)
-                tw(d.label, {TextColor3 = Color3.fromRGB(255, 255, 255)}, C.SpeedFast)
-            else
-                tw(d.pill, {BackgroundColor3 = Color3.fromRGB(28, 28, 36), BackgroundTransparency = 0.35}, C.SpeedFast)
-                tw(d.label, {TextColor3 = C.Text3}, C.SpeedFast)
-            end
-        end
-    end
 end
 
 -- NOTIFICATION SYSTEM
@@ -679,185 +574,55 @@ local function notify(text, color, dur)
     end)
 end
 
--- EVIDENCE TRACKING
-local updateGhostPanel, updateEvidencePanel
+-- GAME EVENT TRACKING
+local function hookGameEvents()
+    local rs = ReplicatedStorage
+    local remotes = rs:FindFirstChild("Remotes") or rs:FindFirstChild("Events")
+    if not remotes then return end
 
-local function markEvidence(evidId)
-    if S.Evidence[evidId] then return end
-    S.Evidence[evidId] = true
-
-    for _, ev in ipairs(EvidenceTypes) do
-        if ev.id == evidId then
-            notify(ev.icon .. " EVIDENCE: " .. ev.label .. " found!", ev.color, 6)
-            break
-        end
-    end
-
-    updateHUD()
-    if updateGhostPanel then updateGhostPanel() end
-    if updateEvidencePanel then updateEvidencePanel() end
-end
-
--- ABILITY LOGGING (with debounce, now AFTER notify)
-local _abilCooldown = {}
-local function logAbility(abilityName, ghostHint)
-    local now = tick()
-    local cd = _abilCooldown[abilityName]
-    if cd and now - cd < 3 then return end
-    _abilCooldown[abilityName] = now
-    S.DetectedAbilities[abilityName] = (S.DetectedAbilities[abilityName] or 0) + 1
-    local timeStr = os.date("%H:%M:%S")
-    table.insert(S._abilityLog, 1, {time=timeStr, ability=abilityName, ghost=ghostHint})
-    if #S._abilityLog > 50 then
-        table.remove(S._abilityLog)
-    end
-    local ok, err = pcall(notify, "⚡ ABILITY: " .. abilityName .. (ghostHint and " ("..ghostHint..")" or ""), C.AbilityColors[abilityName] or C.Accent, 4)
-    if not ok then warn("[Abil] notify error:", err) end
-    if updateAbilityPanel then pcall(updateAbilityPanel) end
-end
-
-local function getPossibleGhostsByAbility()
-    local detected = {}
-    for name, count in pairs(S.DetectedAbilities) do
-        table.insert(detected, name)
-    end
-    if #detected == 0 then return {} end
-    local possible = {}
-    for gname, info in pairs(GhostAbilities) do
-        local matchCount = 0
-        for _, da in ipairs(detected) do
-            for _, ga in ipairs(info.abilities) do
-                if ga == da then matchCount += 1 break end
-            end
-        end
-        local conf = math.floor((matchCount / #detected) * 100)
-        table.insert(possible, {
-            name = gname,
-            matched = matchCount,
-            totalAbilities = #info.abilities,
-            confidence = conf,
-            abilities = info.abilities,
-            icon = info.icon,
-        })
-    end
-    table.sort(possible, function(a, b) return a.confidence > b.confidence end)
-    return possible
-end
-
-local function resetEvidence()
-    for _, ev in ipairs(EvidenceTypes) do
-        S.Evidence[ev.id] = false
-    end
-    notify("🔄 Evidence reset", C.Text2, 3)
-    updateHUD()
-    if updateGhostPanel then updateGhostPanel() end
-    if updateEvidencePanel then updateEvidencePanel() end
-end
-
-local function getPossibleGhosts()
-    local found = {}
-    for id, val in pairs(S.Evidence) do
-        if val then table.insert(found, id) end
-    end
-
-    local possible = {}
-    for gname, gev in pairs(GhostDB) do
-        local matches = true
-        for _, fe in ipairs(found) do
-            local hasIt = false
-            for _, ge in ipairs(gev) do
-                if ge == fe then hasIt = true break end
-            end
-            if not hasIt then matches = false break end
-        end
-        if matches then
-            local matchCount = 0
-            for _, ge in ipairs(gev) do
-                if S.Evidence[ge] then matchCount += 1 end
-            end
-            table.insert(possible, {
-                name = gname,
-                evidence = gev,
-                matched = matchCount,
-                confidence = math.floor((matchCount / 3) * 100)
-            })
-        end
-    end
-
-    table.sort(possible, function(a, b) return a.confidence > b.confidence end)
-    return possible
-end
-
--- HUNT CLOSET TP
-local function findNearestHidingSpot()
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return nil end
-
-    local keywords = {"closet", "wardrobe", "locker", "cabinet", "armoire", "hiding", "cupboard"}
-    local best, bestDist = nil, math.huge
-
-    for _, d in pairs(Workspace:GetDescendants()) do
-        if d:IsA("BasePart") then
-            local name = d.Name:lower()
-            for _, kw in ipairs(keywords) do
-                if name:find(kw) then
-                    local dist = (hrp.Position - d.Position).Magnitude
-                    if dist < bestDist then best = d bestDist = dist end
-                    break
+    local gameEvent = remotes:FindFirstChild("GameEvent") or remotes:FindFirstChild("GameEvent")
+    if gameEvent and gameEvent:IsA("RemoteEvent") then
+        gameEvent.OnClientEvent:Connect(function(eventName, ...)
+            if eventName == "MatchStart" then
+                S._matchInProgress = true
+                S._myKills = 0
+                S._myDeaths = 0
+                notify("⚔ Match started!", C.Accent, 4)
+                updateMatchHUD()
+            elseif eventName == "RoundFight" then
+                S._currentRound = (S._currentRound or 0) + 1
+                notify("🔄 Round " .. S._currentRound .. " — Fight!", C.Yellow, 3)
+                updateMatchHUD()
+            elseif eventName == "MatchEnd" then
+                S._matchInProgress = false
+                S._currentRound = 0
+                notify("🏁 Match ended", C.Red, 4)
+                updateMatchHUD()
+            elseif eventName == "DeathFeed" then
+                local args = {...}
+                local killer = tostring(args[1] or "?")
+                local victim = tostring(args[2] or "?")
+                if killer == LocalPlayer.Name then
+                    S._myKills = (S._myKills or 0) + 1
+                    notify("💀 You killed " .. victim, C.Green, 3)
+                elseif victim == LocalPlayer.Name then
+                    S._myDeaths = (S._myDeaths or 0) + 1
+                    notify("💀 You were killed by " .. killer, C.Red, 3)
                 end
+                updateMatchHUD()
             end
-        end
+        end)
     end
 
-    return best, bestDist
-end
-
-local function safeTPToHidingSpot()
-    local char = LocalPlayer.Character
-    if not char then return false end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hrp or not hum then return false end
-
-    hum:ChangeState(Enum.HumanoidStateType.Running)
-
-    local spot, dist = findNearestHidingSpot()
-    if spot then
-        hrp.CFrame = CFrame.new(spot.Position + Vector3.new(0, 2.5, 0))
-        task.wait(0.05)
-        hum:ChangeState(Enum.HumanoidStateType.Running)
-        notify("🚪 Hid in " .. spot.Name .. " (" .. math.floor(dist) .. " studs)", C.Green, 4)
-        return true
-    end
-    return false
-end
-
--- HUNT DETECTOR
-local huntActive = false
-
-local function onHuntStart()
-    if huntActive then return end
-    huntActive = true
-    notify("👻 HUNT STARTED! Auto-hiding...", C.Red, 5)
-
-    if not S.Features["Auto Hide on Hunt"] then
-        task.wait(10)
-        huntActive = false
-        return
+    local dashEvent = remotes:FindFirstChild("DashEvent")
+    if dashEvent and dashEvent:IsA("RemoteEvent") then
+        -- Client can fire but also watch for enemy dashes via gameplay effects
     end
 
-    local ok = safeTPToHidingSpot()
-    if not ok then
-        notify("⚠ No hiding spot found nearby!", C.Yellow, 4)
+    local blockEvent = remotes:FindFirstChild("BlockEvent")
+    if blockEvent and blockEvent:IsA("RemoteEvent") then
+        -- For auto-parry usage
     end
-
-    task.wait(10)
-    huntActive = false
-end
-
-local function onHuntEnd()
-    huntActive = false
-    notify("✅ Hunt over - you're safe", C.Green, 3)
 end
 
 -- LOADING SCREEN
@@ -893,7 +658,7 @@ local function showLoadingScreen(onComplete)
     logo.Size = UDim2.new(1, 0, 0, 40)
     logo.Position = UDim2.new(0, 0, 0, 30)
     logo.BackgroundTransparency = 1
-    logo.Text = "DEMONOLOGY HUB"
+    logo.Text = "SAMURAI DUELS"
     logo.TextColor3 = C.Text1
     logo.Font = C.Font
     logo.TextSize = 28
@@ -904,7 +669,7 @@ local function showLoadingScreen(onComplete)
     ver.Size = UDim2.new(1, 0, 0, 18)
     ver.Position = UDim2.new(0, 0, 0, 70)
     ver.BackgroundTransparency = 1
-    ver.Text = "v4.5 — fixed ghost limit, EMF, Spirit Box, Laser"
+    ver.Text = "v1.0 — sword PvP combat features"
     ver.TextColor3 = C.AccentDim
     ver.Font = C.FontMed
     ver.TextSize = 13
@@ -968,12 +733,12 @@ local function showLoadingScreen(onComplete)
     tw(line, {Size = UDim2.new(0.5, 0, 0, 1)}, 0.5)
 
     local steps = {
-        {pct = 0.15, text = "mapping workspace..."},
-        {pct = 0.30, text = "indexing remotes..."},
-        {pct = 0.45, text = "loading ghost database..."},
-        {pct = 0.60, text = "fixing evidence trackers..."},
+        {pct = 0.15, text = "mapping remotes..."},
+        {pct = 0.30, text = "loading sword database..."},
+        {pct = 0.45, text = "indexing abilities..."},
+        {pct = 0.60, text = "building combat features..."},
         {pct = 0.75, text = "building interface..."},
-        {pct = 0.90, text = "hooking hunt detector..."},
+        {pct = 0.90, text = "hooking game events..."},
         {pct = 1.00, text = "ready."},
     }
 
@@ -1096,7 +861,7 @@ local function buildHub()
     titleTxt.Size = UDim2.new(0, 250, 0, 20)
     titleTxt.Position = UDim2.new(0, 60, 0, 8)
     titleTxt.BackgroundTransparency = 1
-    titleTxt.Text = "DEMONOLOGY HUB"
+    titleTxt.Text = "SAMURAI DUELS HUB"
     titleTxt.TextColor3 = C.Text1
     titleTxt.Font = C.Font
     titleTxt.TextSize = 16
@@ -1107,7 +872,7 @@ local function buildHub()
     subtitleTxt.Size = UDim2.new(0, 240, 0, 12)
     subtitleTxt.Position = UDim2.new(0, 60, 0, 28)
     subtitleTxt.BackgroundTransparency = 1
-    subtitleTxt.Text = "1nxs - v5.0"
+    subtitleTxt.Text = "1nxs - v1.0"
     subtitleTxt.TextColor3 = C.Text3
     subtitleTxt.Font = C.FontReg
     subtitleTxt.TextSize = 10
@@ -1192,13 +957,13 @@ local function buildHub()
     pad(sidebar, 8, 8, 8, 8)
 
     local categories = {
-        {name="ESP",       icon="👁",   order=1},
-        {name="Evidence",  icon="🔍",   order=2},
-        {name="Ghost ID",  icon="👻",   order=3},
-        {name="Abilities", icon="⚡",   order=4},
-        {name="Survival",  icon="🛡",   order=5},
+        {name="Combat",    icon="⚔",   order=1},
+        {name="ESP",       icon="👁",   order=2},
+        {name="Match",     icon="🏟",   order=3},
+        {name="Swords",    icon="🗡",   order=4},
+        {name="Abilities", icon="⚡",   order=5},
         {name="Visual",    icon="✨",   order=6},
-        {name="Tools",     icon="⚙",   order=7},
+        {name="Misc",      icon="⚙",   order=7},
         {name="Config",    icon="🗂",   order=8},
     }
 
@@ -1456,7 +1221,7 @@ local function buildHub()
     heroSub.Size = UDim2.new(1, -140, 0, 18)
     heroSub.Position = UDim2.new(0, 126, 0, 66)
     heroSub.BackgroundTransparency = 1
-    heroSub.Text = "1nxs - Demonology Hub"
+    heroSub.Text = "1nxs - Samurai DUELS Hub"
     heroSub.TextColor3 = C.Text2
     heroSub.Font = C.FontReg
     heroSub.TextSize = 12
@@ -1932,1069 +1697,650 @@ local function buildHub()
         return cont
     end
 
+    --   PAGE: COMBAT
+    -- ═══════════════════════════════════════
+    local combatPage = makePage("Combat")
+
+    local remotes = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Events"))
+    local blockEvent = remotes and remotes:FindFirstChild("BlockEvent")
+    local useAbility = remotes and remotes:FindFirstChild("UseAbility")
+
+    local function findDashEvent()
+        local char = LocalPlayer.Character
+        if not char then return nil end
+        for _, t in pairs(char:GetChildren()) do
+            if t:IsA("Tool") then
+                local de = t:FindFirstChild("DashEvent")
+                if de and de:IsA("RemoteEvent") then return de end
+            end
+        end
+        return nil
+    end
+
+    local function fireDash()
+        local dashEvent = findDashEvent()
+        if not dashEvent then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local target, bestDist = nil, math.huge
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                local thrp = p.Character:FindFirstChild("HumanoidRootPart")
+                if thrp then
+                    local d = (hrp.Position - thrp.Position).Magnitude
+                    if d < bestDist and d < 130 then bestDist = d target = thrp end
+                end
+            end
+        end
+        if target then
+            local aimDir = (target.Position - hrp.Position).Unit
+            dashEvent:FireServer(1.0, true, aimDir)
+        end
+    end
+
+    makeToggle(combatPage, "Auto-Dash", "Auto-dash at nearest enemy (full charge)", 1, function(on)
+        rmConn("autodash")
+        if not on then return end
+        local lastDash = 0
+        addConn("autodash", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Dash"] then return end
+            local interval = S._dashInterval or 800
+            local now = tick()
+            if (now - lastDash) * 1000 < interval then return end
+            lastDash = now
+            fireDash()
+        end))
+    end)
+
+    do
+        local cont = Instance.new("Frame")
+        cont.Size = UDim2.new(1, 0, 0, 36)
+        cont.BackgroundTransparency = 1
+        cont.LayoutOrder = 2
+        cont.Parent = combatPage
+
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(0.5, 0, 1, 0)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "Dash interval (ms):"
+        lbl.TextColor3 = C.Text2
+        lbl.Font = C.FontReg
+        lbl.TextSize = 11
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.Parent = cont
+        pad(lbl, 6, 6, 12, 0)
+
+        local inputBg = Instance.new("Frame")
+        inputBg.Size = UDim2.new(0, 70, 0, 26)
+        inputBg.Position = UDim2.new(1, -80, 0.5, -13)
+        inputBg.BackgroundColor3 = C.Bg4
+        inputBg.BorderSizePixel = 0
+        inputBg.Parent = cont
+        corner(inputBg, UDim.new(0, 4))
+
+        local input = Instance.new("TextBox")
+        input.Size = UDim2.new(1, -10, 1, 0)
+        input.Position = UDim2.new(0, 5, 0, 0)
+        input.BackgroundTransparency = 1
+        input.Text = "800"
+        input.TextColor3 = C.Text1
+        input.Font = C.FontMed
+        input.TextSize = 12
+        input.ClearTextOnFocus = false
+        input.Parent = inputBg
+
+        local function parseInterval()
+            local v = tonumber(input.Text)
+            if v then
+                S._dashInterval = math.clamp(v, 100, 5000)
+                input.Text = tostring(S._dashInterval)
+            else
+                input.Text = "800"
+                S._dashInterval = 800
+            end
+        end
+        parseInterval()
+        input.FocusLost:Connect(function(enter) if enter then parseInterval() end end)
+        S._dashInterval = 800
+    end
+
+    makeToggle(combatPage, "Auto-Parry", "Auto-block when enemy dashes nearby", 3, function(on)
+        rmConn("autoparry")
+        if not on then return end
+        addConn("autoparry", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Parry"] or not blockEvent then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if thrp and (hrp.Position - thrp.Position).Magnitude < 20 then
+                        blockEvent:FireServer()
+                        break
+                    end
+                end
+            end
+        end))
+    end)
+
+    makeToggle(combatPage, "Aimbot", "Auto-aim camera at nearest enemy", 4, function(on)
+        rmConn("aimbot")
+        if not on then return end
+        addConn("aimbot", RunService.RenderStepped:Connect(function()
+            if not S.Features["Aimbot"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            local target, bestDist = nil, math.huge
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if thrp then
+                        local d = (hrp.Position - thrp.Position).Magnitude
+                        if d < bestDist and d < 130 then bestDist = d target = thrp end
+                    end
+                end
+            end
+            if target then
+                local cf = CFrame.new(Camera.CFrame.Position, target.Position)
+                Camera.CFrame = cf
+            end
+        end))
+    end)
+
+    makeToggle(combatPage, "Infinite Jump", "Jump in air (multi-jump)", 5, function(on)
+        rmConn("infjump")
+        if not on then return end
+        local UIS = UserInputService
+        addConn("infjump", UIS.JumpRequest:Connect(function()
+            if not S.Features["Infinite Jump"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end))
+    end)
+
+    makeToggle(combatPage, "Berzerk", "Remove dash cooldown (client-side)", 6, function(on)
+        local plr = LocalPlayer
+        if on then
+            plr:SetAttribute("Berzerk", true)
+            notify("⚡ Berzerk mode activated", C.Yellow, 3)
+        else
+            plr:SetAttribute("Berzerk", nil)
+            notify("⚡ Berzerk deactivated", C.Text3, 3)
+        end
+    end)
+
+    makeToggle(combatPage, "Anti-Death", "Keep health max and auto-respawn", 7, function(on)
+        rmConn("antideath")
+        if not on then return end
+        addConn("antideath", RunService.Heartbeat:Connect(function()
+            if not S.Features["Anti-Death"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                pcall(function() hum.Health = hum.MaxHealth end)
+            end
+        end))
+        LocalPlayer.CharacterAdded:Connect(function(char)
+            if not S.Features["Anti-Death"] then return end
+            task.wait(0.5)
+            local hum = char:WaitForChild("Humanoid", 5)
+            if hum then
+                pcall(function() hum.Health = hum.MaxHealth end)
+            end
+        end)
+    end)
+
+    makeToggle(combatPage, "Auto-Ability", "Auto-use special ability on cooldown", 8, function(on)
+        rmConn("autoabil")
+        if not on or not useAbility then return end
+        local lastUse = 0
+        addConn("autoabil", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Ability"] then return end
+            local now = tick()
+            if now - lastUse < 5 then return end
+            local plr = LocalPlayer
+            local ability = plr:GetAttribute("Ability")
+            if ability and ability ~= "" then
+                useAbility:FireServer(ability)
+                lastUse = now
+            end
+        end))
+    end)
     --   PAGE: ESP
     -- ═══════════════════════════════════════
     local espPage = makePage("ESP")
 
-    -- Ghost ESP (FIXED: uses workspace.Ghost directly)
-    makeToggle(espPage, "Ghost ESP", "Track ghost through walls (fixed)", 1, function(on)
-        clearHL("ghost")
-        rmConn("ghost_loop")
-        rmConn("ghost_rescan")
+    makeToggle(espPage, "Player Highlight", "Highlight all players through walls", 1, function(on)
+        clearHL("players")
+        rmConn("plr_esp")
         if not on then return end
-        S.Highlights["ghost"] = {}
-        S.Billboards["ghost"] = {}
+        S.Highlights["players"] = {}
+        S.Billboards["players"] = {}
 
         local function scan()
-            clearHL("ghost")
-            S.Highlights["ghost"] = {}
-            S.Billboards["ghost"] = {}
-
-            local ghost = Workspace:FindFirstChild("Ghost")
-            if ghost then
-                local hrp = ghost:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local hl = Instance.new("Highlight")
-                    hl.FillColor = Color3.fromRGB(255, 0, 60)
-                    hl.FillTransparency = 0.5
-                    hl.OutlineColor = Color3.fromRGB(255, 40, 80)
-                    hl.OutlineTransparency = 0.1
-                    hl.Adornee = ghost
-                    hl.Parent = CoreGui
-                    table.insert(S.Highlights["ghost"], hl)
-
-                    local bb = Instance.new("BillboardGui")
-                    bb.Size = UDim2.new(0, 130, 0, 30)
-                    bb.StudsOffset = Vector3.new(0, 3.5, 0)
-                    bb.AlwaysOnTop = true
-                    bb.Adornee = hrp
-                    bb.Parent = CoreGui
-
-                    local bg = Instance.new("Frame")
-                    bg.Size = UDim2.new(1, 0, 1, 0)
-                    bg.BackgroundColor3 = Color3.fromRGB(20, 0, 8)
-                    bg.BackgroundTransparency = 0.2
-                    bg.BorderSizePixel = 0
-                    bg.Parent = bb
-                    corner(bg, UDim.new(0, 6))
-                    stroke(bg, Color3.fromRGB(255, 0, 60), 1, 0.3)
-
-                    local l = Instance.new("TextLabel")
-                    l.Size = UDim2.new(1, 0, 0.6, 0)
-                    l.Position = UDim2.new(0, 0, 0, 2)
-                    l.BackgroundTransparency = 1
-                    l.Text = "👻 GHOST"
-                    l.TextColor3 = Color3.fromRGB(255, 80, 110)
-                    l.Font = C.Font
-                    l.TextSize = 12
-                    l.Parent = bb
-
-                    local dl = Instance.new("TextLabel")
-                    dl.Name = "Dist"
-                    dl.Size = UDim2.new(1, 0, 0.4, 0)
-                    dl.Position = UDim2.new(0, 0, 0.6, 0)
-                    dl.BackgroundTransparency = 1
-                    dl.Text = ""
-                    dl.TextColor3 = C.Text3
-                    dl.Font = C.FontReg
-                    dl.TextSize = 9
-                    dl.Parent = bb
-
-                    table.insert(S.Billboards["ghost"], bb)
-                end
-
-                local holder = Workspace:FindFirstChild("CursedPossessionHolder")
-                if holder then
-                    for _, d in pairs(holder:GetDescendants()) do
-                        if d.Name == "GhostAnchor" and d:IsA("BasePart") then
-                            local hl2 = Instance.new("Highlight")
-                            hl2.FillColor = Color3.fromRGB(255, 0, 60)
-                            hl2.FillTransparency = 0.55
-                            hl2.OutlineColor = Color3.fromRGB(255, 40, 80)
-                            hl2.OutlineTransparency = 0.15
-                            hl2.Adornee = d.Parent or d
-                            hl2.Parent = CoreGui
-                            table.insert(S.Highlights["ghost"], hl2)
-                        end
-                    end
-                end
-            end
-        end
-        scan()
-
-        addConn("ghost_loop", RunService.Heartbeat:Connect(function()
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not myHRP then return end
-            for _, bb in pairs(S.Billboards["ghost"] or {}) do
-                if bb and bb.Parent and bb.Adornee then
-                    local dist = (myHRP.Position - bb.Adornee.Position).Magnitude
-                    local dl = bb:FindFirstChild("Dist")
-                    if dl then dl.Text = math.floor(dist) .. " studs" end
-                end
-            end
-        end))
-
-        addConn("ghost_rescan", RunService.Heartbeat:Connect(function()
-            if not S.Features["Ghost ESP"] then return end
-            local now = tick()
-            if not S._lastGhostScan or now - S._lastGhostScan >= 2 then
-                S._lastGhostScan = now
-                pcall(scan)
-            end
-        end))
-    end)
-
-    -- Handprint ESP
-    makeToggle(espPage, "Handprint ESP", "Highlight handprints with UV glow", 2, function(on)
-        clearHL("handprints")
-        rmConn("hp_added") rmConn("hp_removed")
-        if not on then return end
-        S.Highlights["handprints"] = {}; S.Billboards["handprints"] = {}
-
-        local function hlPrint(obj)
-            if not obj:IsA("BasePart") and not obj:IsA("Model") then return end
-            local hl = Instance.new("Highlight")
-            hl.FillColor = C.EvidPrints; hl.FillTransparency = 0.35
-            hl.OutlineColor = C.EvidPrints; hl.OutlineTransparency = 0.1
-            hl.Adornee = obj; hl.Parent = CoreGui
-            table.insert(S.Highlights["handprints"], hl)
-
-            local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
-            if part then
-                local bb = Instance.new("BillboardGui")
-                bb.Size = UDim2.new(0, 100, 0, 22); bb.StudsOffset = Vector3.new(0, 2, 0)
-                bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, 0, 1, 0)
-                l.BackgroundColor3 = Color3.fromRGB(20, 8, 30); l.BackgroundTransparency = 0.2
-                l.Text = "🖐 HANDPRINT"; l.TextColor3 = C.EvidPrints
-                l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb
-                corner(l, UDim.new(0, 4))
-                table.insert(S.Billboards["handprints"], bb)
-            end
-            markEvidence("Prints")
-        end
-
-        local folder = Workspace:FindFirstChild("Handprints")
-        if folder then
-            for _, ch in pairs(folder:GetChildren()) do pcall(hlPrint, ch) end
-            addConn("hp_added", folder.ChildAdded:Connect(function(ch)
-                task.wait(0.1); if S.Features["Handprint ESP"] then pcall(hlPrint, ch) end
-            end))
-            addConn("hp_removed", folder.ChildRemoved:Connect(function()
-                if S.Features["Handprint ESP"] then
-                    clearHL("handprints"); S.Highlights["handprints"] = {}; S.Billboards["handprints"] = {}
-                    for _, ch in pairs(folder:GetChildren()) do pcall(hlPrint, ch) end
-                end
-            end))
-        end
-    end)
-
-    -- Player ESP
-    makeToggle(espPage, "Player ESP", "Show all players with distance", 3, function(on)
-        clearHL("players"); rmConn("plr_loop") rmConn("plr_rescan")
-        if not on then return end
-        S.Highlights["players"] = {}; S.Billboards["players"] = {}
-
-        local function scan()
-            clearHL("players"); S.Highlights["players"] = {}; S.Billboards["players"] = {}
+            clearHL("players")
+            S.Highlights["players"] = {}
+            S.Billboards["players"] = {}
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character then
                     local hrp = p.Character:FindFirstChild("HumanoidRootPart")
                     if hrp then
                         local hl = Instance.new("Highlight")
-                        hl.FillColor = C.Green; hl.FillTransparency = 0.6
-                        hl.OutlineColor = C.Green; hl.OutlineTransparency = 0.2
-                        hl.Adornee = p.Character; hl.Parent = CoreGui
+                        hl.FillColor = C.Red
+                        hl.FillTransparency = 0.5
+                        hl.OutlineColor = C.Red
+                        hl.OutlineTransparency = 0.1
+                        hl.Adornee = p.Character
+                        hl.Parent = CoreGui
                         table.insert(S.Highlights["players"], hl)
+
                         local bb = Instance.new("BillboardGui")
-                        bb.Size = UDim2.new(0, 110, 0, 30); bb.StudsOffset = Vector3.new(0, 3.5, 0)
-                        bb.AlwaysOnTop = true; bb.Adornee = hrp; bb.Parent = CoreGui
+                        bb.Size = UDim2.new(0, 110, 0, 26)
+                        bb.StudsOffset = Vector3.new(0, 3.5, 0)
+                        bb.AlwaysOnTop = true
+                        bb.Adornee = hrp
+                        bb.Parent = CoreGui
+
+                        local bg = Instance.new("Frame")
+                        bg.Size = UDim2.new(1, 0, 1, 0)
+                        bg.BackgroundColor3 = C.Bg1
+                        bg.BackgroundTransparency = 0.15
+                        bg.BorderSizePixel = 0
+                        bg.Parent = bb
+                        corner(bg, UDim.new(0, 4))
+                        stroke(bg, C.Red, 1, 0.4)
+
                         local l = Instance.new("TextLabel")
-                        l.Size = UDim2.new(1, 0, 0.55, 0)
-                        l.BackgroundColor3 = Color3.fromRGB(5, 18, 8); l.BackgroundTransparency = 0.2
-                        l.Text = "👤 " .. p.Name; l.TextColor3 = C.Green
-                        l.Font = C.FontMed; l.TextSize = 11; l.Parent = bb
-                        corner(l, UDim.new(0, 4))
-                        local dl = Instance.new("TextLabel")
-                        dl.Name = "Dist"; dl.Size = UDim2.new(1, 0, 0.45, 0); dl.Position = UDim2.new(0, 0, 0.55, 0)
-                        dl.BackgroundTransparency = 1; dl.Text = ""; dl.TextColor3 = C.Text3
-                        dl.Font = C.FontReg; dl.TextSize = 9; dl.Parent = bb
+                        l.Size = UDim2.new(1, 0, 1, 0)
+                        l.BackgroundTransparency = 1
+                        l.Text = "🗡 " .. p.Name
+                        l.TextColor3 = C.Red
+                        l.Font = C.FontMed
+                        l.TextSize = 11
+                        l.Parent = bb
                         table.insert(S.Billboards["players"], bb)
                     end
                 end
             end
         end
         scan()
-        addConn("plr_loop", RunService.Heartbeat:Connect(function()
-            local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if not myHRP then return end
-            for _, bb in pairs(S.Billboards["players"] or {}) do
-                if bb and bb.Parent and bb.Adornee then
-                    local dist = (myHRP.Position - bb.Adornee.Position).Magnitude
-                    local dl = bb:FindFirstChild("Dist")
-                    if dl then dl.Text = math.floor(dist) .. " studs" end
-                end
-            end
-        end))
-        addConn("plr_rescan", RunService.Heartbeat:Connect(function()
-            if not S.Features["Player ESP"] then return end
+        addConn("plr_esp", RunService.Heartbeat:Connect(function()
+            if not S.Features["Player Highlight"] then return end
             local now = tick()
-            if not S._lastPlrScan or now - S._lastPlrScan >= 4 then
+            if not S._lastPlrScan or now - S._lastPlrScan >= 3 then
                 S._lastPlrScan = now
                 pcall(scan)
             end
         end))
     end)
 
-    -- Item ESP
-    makeToggle(espPage, "Item ESP", "Highlight all pickable items", 4, function(on)
-        clearHL("items"); rmConn("item_a"); rmConn("item_r")
+    makeToggle(espPage, "Team Rings", "Color rings below all players", 2, function(on)
+        clearHL("rings")
+        rmConn("ring_loop")
         if not on then return end
-        S.Highlights["items"] = {}; S.Billboards["items"] = {}
-
-        local function hlItem(item)
-            if not item:IsA("Model") and not item:IsA("BasePart") then return end
-            local hl = Instance.new("Highlight")
-            hl.FillColor = C.Blue; hl.FillTransparency = 0.65
-            hl.OutlineColor = C.Blue; hl.OutlineTransparency = 0.3
-            hl.Adornee = item; hl.Parent = CoreGui
-            table.insert(S.Highlights["items"], hl)
-            local part = item:IsA("Model") and (item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart")) or item
-            if part then
-                local bb = Instance.new("BillboardGui")
-                bb.Size = UDim2.new(0, 90, 0, 20); bb.StudsOffset = Vector3.new(0, 2.5, 0)
-                bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, 0, 1, 0)
-                l.BackgroundColor3 = Color3.fromRGB(8, 12, 25); l.BackgroundTransparency = 0.2
-                l.Text = "📦 " .. item.Name; l.TextColor3 = C.Blue
-                l.Font = C.FontMed; l.TextSize = 10; l.TextTruncate = Enum.TextTruncate.AtEnd; l.Parent = bb
-                corner(l, UDim.new(0, 4))
-                table.insert(S.Billboards["items"], bb)
-            end
-        end
+        S.Highlights["rings"] = {}
 
         local function scan()
-            clearHL("items"); S.Highlights["items"] = {}; S.Billboards["items"] = {}
-            local f = Workspace:FindFirstChild("Items")
-            if f then for _, ch in pairs(f:GetChildren()) do pcall(hlItem, ch) end end
+            clearHL("rings")
+            S.Highlights["rings"] = {}
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local ring = Instance.new("Part")
+                        ring.Name = "TeamRing"
+                        ring.Size = Vector3.new(6, 0.2, 6)
+                        ring.Shape = Enum.PartType.Cylinder
+                        ring.Material = Enum.Material.Neon
+                        ring.Color = p.TeamColor.Color
+                        ring.BrickColor = p.TeamColor
+                        ring.Anchored = true
+                        ring.CanCollide = false
+                        ring.Transparency = 0.3
+                        ring.Parent = CoreGui
+                        local ma = Instance.new("ManualWeld")
+                        ma.Part0 = hrp
+                        ma.Part1 = ring
+                        ma.C1 = CFrame.new(0, -3, 0)
+                        ma.Parent = ring
+                        table.insert(S.Highlights["rings"], ring)
+                    end
+                end
+            end
         end
         scan()
-        local f = Workspace:FindFirstChild("Items")
-        if f then
-            addConn("item_a", f.ChildAdded:Connect(function() task.wait(0.1) if S.Features["Item ESP"] then pcall(scan) end end))
-            addConn("item_r", f.ChildRemoved:Connect(function() task.wait(0.1) if S.Features["Item ESP"] then pcall(scan) end end))
-        end
+        addConn("ring_loop", RunService.Heartbeat:Connect(function()
+            if not S.Features["Team Rings"] then return end
+            local now = tick()
+            if not S._lastRingScan or now - S._lastRingScan >= 2 then
+                S._lastRingScan = now
+                pcall(scan)
+            end
+        end))
     end)
 
-    -- Door Tracker
-    makeToggle(espPage, "Door Tracker", "Highlight all interactable doors", 5, function(on)
-        clearHL("doors")
+    makeToggle(espPage, "Show All Players", "Show all players (spectate mode)", 3, function(on)
+        rmConn("showall")
         if not on then return end
-        S.Highlights["doors"] = {}; S.Billboards["doors"] = {}
-        local df = Workspace:FindFirstChild("Doors")
-        if not df then notify("⚠ Doors folder not found", C.Yellow) return end
-        for _, dm in pairs(df:GetChildren()) do
-            if dm:IsA("Model") then
-                local hl = Instance.new("Highlight")
-                hl.FillColor = C.Yellow; hl.FillTransparency = 0.75
-                hl.OutlineColor = C.Yellow; hl.OutlineTransparency = 0.4
-                hl.Adornee = dm; hl.Parent = CoreGui
-                table.insert(S.Highlights["doors"], hl)
-                local part = dm:FindFirstChildWhichIsA("BasePart", true)
-                if part then
-                    local bb = Instance.new("BillboardGui")
-                    bb.Size = UDim2.new(0, 80, 0, 20); bb.StudsOffset = Vector3.new(0, 3, 0)
-                    bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                    local l = Instance.new("TextLabel")
-                    l.Size = UDim2.new(1, 0, 1, 0)
-                    l.BackgroundColor3 = Color3.fromRGB(25, 20, 5); l.BackgroundTransparency = 0.25
-                    l.Text = "🚪 " .. dm.Name; l.TextColor3 = C.Yellow
-                    l.Font = C.FontMed; l.TextSize = 10; l.Parent = bb
-                    corner(l, UDim.new(0, 4))
-                    table.insert(S.Billboards["doors"], bb)
+        addConn("showall", RunService.Heartbeat:Connect(function()
+            if not S.Features["Show All Players"] then return end
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character then
+                    p.Character:SetAttribute("Visible", true)
                 end
             end
-        end
+        end))
     end)
 
-    -- ═══════════════════════════════════════
-    --   PAGE: EVIDENCE
-    -- ═══════════════════════════════════════
-    local evidPage = makePage("Evidence")
-
-    local evidenceBulkToggles = {
-        "Freezing Detector",
-        "EMF Monitor",
-        "Spirit Box Monitor",
-        "Ghost Orb Detector",
-        "Inscription Detector",
-        "Wither Detector",
-        "Laser Detector",
-    }
-
-    local function setEvidenceBulkToggles(on)
-        for _, featureName in ipairs(evidenceBulkToggles) do
-            local ctrl = S._toggleControls[featureName]
-            if ctrl then
-                ctrl.set(on, true)
+    makeToggle(espPage, "Distance ESP", "Show distance to enemies", 4, function(on)
+        rmConn("dist_esp")
+        if not on then return end
+        addConn("dist_esp", RunService.Heartbeat:Connect(function()
+            if not S.Features["Distance ESP"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character then
+                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
+                    if thrp then
+                        local dist = (hrp.Position - thrp.Position).Magnitude
+                        p:SetAttribute("DistanceLabel", math.floor(dist))
+                    end
+                end
             end
-        end
+        end))
+    end)
+
+    --   PAGE: MATCH
+    -- ═══════════════════════════════════════
+    local matchPage = makePage("Match")
+
+    makeToggle(matchPage, "Auto-Join Queue", "Automatically join match queue", 1, function(on)
+        rmConn("autoqueue")
+        if not on then return end
+        local joinReq = remotes and remotes:FindFirstChild("JoinQueueRequest")
+        addConn("autoqueue", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Join Queue"] or not joinReq then return end
+            if not S._matchInProgress and not S._queueJoined then
+                joinReq:FireServer()
+                S._queueJoined = true
+                notify("🎮 Joined queue", C.Accent, 3)
+            end
+        end))
+    end)
+
+    makeToggle(matchPage, "Auto-Vote Map", "Auto-vote for a map when voting starts", 2, function(on)
+        rmConn("autovote")
+        if not on then return end
+        local mapVote = remotes and remotes:FindFirstChild("MapVote")
+        addConn("autovote", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Vote Map"] or not mapVote then return end
+            -- Auto-vote for first available map
+            local voteGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("MapVote")
+            if voteGui then
+                local firstBtn = voteGui:FindFirstChildWhichIsA("TextButton")
+                if firstBtn then
+                    mapVote:FireServer(firstBtn.Name)
+                end
+            end
+        end))
+    end)
+
+    makeToggle(matchPage, "Auto-Spectate", "Auto-spectate after death", 3, function(on)
+        rmConn("autospec")
+        if not on then return end
+        local char = LocalPlayer.Character
+        addConn("autospec", LocalPlayer.CharacterAdded:Connect(function()
+            task.wait(3)
+            local respawnGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Respawn")
+            if respawnGui then
+                local specBtn = respawnGui:FindFirstChildWhichIsA("TextButton")
+                if specBtn then
+                    specBtn:FindFirstChildOfClass("LocalScript"):Destroy()
+                end
+            end
+        end))
+    end)
+
+    -- Match info display
+    local matchInfoFrame = Instance.new("Frame")
+    matchInfoFrame.Size = UDim2.new(1, 0, 0, 120)
+    matchInfoFrame.BackgroundColor3 = C.Bg3
+    matchInfoFrame.BackgroundTransparency = 0.25
+    matchInfoFrame.BorderSizePixel = 0
+    matchInfoFrame.LayoutOrder = 10
+    matchInfoFrame.Parent = matchPage
+    corner(matchInfoFrame, UDim.new(0, 8))
+
+    local matchInfoTitle = Instance.new("TextLabel")
+    matchInfoTitle.Size = UDim2.new(1, -16, 0, 16)
+    matchInfoTitle.Position = UDim2.new(0, 10, 0, 6)
+    matchInfoTitle.BackgroundTransparency = 1
+    matchInfoTitle.Text = "MATCH INFO"
+    matchInfoTitle.TextColor3 = C.AccentDim
+    matchInfoTitle.Font = C.Font
+    matchInfoTitle.TextSize = 9
+    matchInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+    matchInfoTitle.Parent = matchInfoFrame
+
+    local matchInfoGrid = Instance.new("UIGridLayout")
+    matchInfoGrid.CellSize = UDim2.new(0.5, -6, 0, 22)
+    matchInfoGrid.CellPadding = UDim2.new(0, 6, 0, 4)
+    matchInfoGrid.SortOrder = Enum.SortOrder.LayoutOrder
+    matchInfoGrid.Parent = matchInfoFrame
+
+    local function makeMatchStat(parent, text, order)
+        local f = Instance.new("Frame")
+        f.Size = UDim2.new(1, 0, 1, 0)
+        f.BackgroundColor3 = C.Bg4
+        f.BackgroundTransparency = 0.2
+        f.BorderSizePixel = 0
+        f.LayoutOrder = order
+        f.Parent = parent
+        corner(f, UDim.new(0, 4))
+        local l = Instance.new("TextLabel")
+        l.Size = UDim2.new(1, -10, 1, 0)
+        l.Position = UDim2.new(0, 6, 0, 0)
+        l.BackgroundTransparency = 1
+        l.Text = text
+        l.TextColor3 = C.Text2
+        l.Font = C.FontReg
+        l.TextSize = 10
+        l.TextXAlignment = Enum.TextXAlignment.Left
+        l.Parent = f
+        return l
     end
 
-    -- Evidence ESP
-    makeToggle(evidPage, "Evidence ESP", "Highlight ALL evidence in world", 1, function(on)
-        clearHL("evidence")
-        rmConn("ev_hp_a") rmConn("ev_air_a") rmConn("ev_scr_a")
-        rmConn("ev_salt_a") rmConn("ev_glass_a") rmConn("ev_lidar_a")
-        setEvidenceBulkToggles(on)
-        if not on then return end
-        S.Highlights["evidence"] = {}; S.Billboards["evidence"] = {}
+    local matchStatusLabel = makeMatchStat(matchInfoFrame, "Status: Idle", 1)
+    local matchRoundLabel = makeMatchStat(matchInfoFrame, "Round: -", 2)
+    local matchKillsLabel = makeMatchStat(matchInfoFrame, "Kills: 0", 3)
+    local matchDeathsLabel = makeMatchStat(matchInfoFrame, "Deaths: 0", 4)
 
-        local evidFolders = {
-            {name="Handprints",  emoji="🖐",  col=C.EvidPrints,     evid="Prints"},
-            {name="Airballs",    emoji="🔮",  col=C.EvidOrb,        evid="GhostOrb"},
-            {name="GhostOrb",    emoji="🔮",  col=C.EvidOrb,        evid="GhostOrb"},
-            {name="ScratchText", emoji="✍",   col=C.EvidInscript,   evid="Inscription"},
-            {name="SaltPiles",   emoji="🧂",  col=Color3.new(1,1,1), evid=nil},
-            {name="BrokenGlass", emoji="💎",  col=C.Purple,         evid=nil},
-            {name="LIDAR",       emoji="🔴",  col=C.EvidLaser,      evid="Laser"},
-            {name="Laser",       emoji="🔴",  col=C.EvidLaser,      evid="Laser"},
-            {name="LaserProjector", emoji="🔴", col=C.EvidLaser,   evid="Laser"},
-        }
-
-        local function hlEvidence(obj, info)
-            local hl = Instance.new("Highlight")
-            hl.FillColor = info.col; hl.FillTransparency = 0.4
-            hl.OutlineColor = info.col; hl.OutlineTransparency = 0.1
-            hl.Adornee = obj; hl.Parent = CoreGui
-            table.insert(S.Highlights["evidence"], hl)
-
-            local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
-            if part then
-                local bb = Instance.new("BillboardGui")
-                bb.Size = UDim2.new(0, 100, 0, 22); bb.StudsOffset = Vector3.new(0, 2.5, 0)
-                bb.AlwaysOnTop = true; bb.Adornee = part; bb.Parent = CoreGui
-                local l = Instance.new("TextLabel")
-                l.Size = UDim2.new(1, 0, 1, 0)
-                l.BackgroundColor3 = C.Bg1; l.BackgroundTransparency = 0.15
-                l.Text = info.emoji .. " " .. info.name; l.TextColor3 = info.col
-                l.Font = C.FontMed; l.TextSize = 10; l.Parent = bb
-                corner(l, UDim.new(0, 4))
-                table.insert(S.Billboards["evidence"], bb)
-            end
-            if info.evid then markEvidence(info.evid) end
-        end
-
-        for _, info in ipairs(evidFolders) do
-            local folder = Workspace:FindFirstChild(info.name)
-            if folder then
-                for _, ch in pairs(folder:GetChildren()) do pcall(hlEvidence, ch, info) end
-                local key = "ev_" .. info.name:lower():gsub("%s","") .. "_a"
-                addConn(key, folder.ChildAdded:Connect(function(ch)
-                    task.wait(0.1)
-                    if S.Features["Evidence ESP"] then
-                        pcall(hlEvidence, ch, info)
-                        notify(info.emoji .. " " .. info.name .. " detected!", info.col, 4)
-                    end
-                end))
-            end
-        end
-        notify("🔍 Monitoring all evidence channels", C.Accent, 3)
-    end)
-
-    -- Freezing Detector
-    makeToggle(evidPage, "Freezing Detector", "Alert on freezing temps (0°C or below)", 2, function(on)
-        rmConn("temp_hook"); rmConn("temp_scan")
-        if not on then return end
-
-        local function checkTemp(temp)
-            if type(temp) ~= "number" then return end
-            if temp <= 0 then
-                markEvidence("Freezing")
-                notify("❄ FREEZING: " .. string.format("%.1f°C", temp), C.EvidFreeze, 6)
-            elseif temp <= 10 then
-                notify("❄ Cold: " .. string.format("%.1f°C", temp) .. " (watching...)", C.EvidFreeze, 3)
-            end
-        end
-
-        -- Hook the UpdateThermometerDisplay remote
-        if Events then
-            local therm = Events:FindFirstChild("UpdateThermometerDisplay")
-            if therm and therm:IsA("RemoteEvent") then
-                addConn("temp_hook", therm.OnClientEvent:Connect(function(disp, temp)
-                    checkTemp(temp)
-                end))
-                notify("🌡 Thermometer remote hooked", C.Green, 3)
-            end
-        end
-
-        -- Fallback: scan for temp values (FIXED: more name patterns + IntValue support)
-        addConn("temp_scan", RunService.Heartbeat:Connect(function()
-            if not S.Features["Freezing Detector"] then return end
-            for _, v in pairs(Workspace:GetDescendants()) do
-                if v:IsA("NumberValue") or v:IsA("IntValue") then
-                    local nm = v.Name:lower()
-                    if nm:find("temp") or nm:find("cold") or nm:find("freeze") or nm:find("celsius") or nm:find("therm") then
-                        if tonumber(v.Value) ~= nil then
-                            checkTemp(tonumber(v.Value))
-                        end
-                    end
-                end
-            end
-        end))
-    end)
-
-    -- EMF Monitor (FIXED: broad remote scan + Notify hook + tool NumberValue children)
-    makeToggle(evidPage, "EMF Monitor", "Watch for EMF Level 5 readings (fixed)", 3, function(on)
-        rmConn("emf_hook") rmConn("emf_notify") rmConn("emf_tool_scan") rmConn("emf_remote")
-        if not on then return end
-        local hookedAny = false
-        for _, r in pairs(game:GetDescendants()) do
-            if r:IsA("RemoteEvent") and (r.Name:lower():find("emf") or r.Name:lower():find("reader") or r.Name:lower():find("detector")) then
-                addConn("emf_remote_" .. r.Name, r.OnClientEvent:Connect(function(...)
-                    for _, v in ipairs({...}) do
-                        if type(v) == "number" and v >= 5 then
-                            markEvidence("EMF5"); notify("⚡ EMF LEVEL 5! (" .. r.Name .. ")", C.EvidEMF, 5); return
-                        end
-                    end
-                end))
-                hookedAny = true
-            end
-        end
-        if hookedAny then notify("⚡ EMF remote(s) hooked", C.Green, 3) end
-        -- Hook Notify for EMF-related messages
-        if Events then
-            local notifyEv = Events:FindFirstChild("Notify")
-            if notifyEv and notifyEv:IsA("RemoteEvent") then
-                addConn("emf_notify", notifyEv.OnClientEvent:Connect(function(...)
-                    local args = {...}
-                    for _, v in ipairs(args) do
-                        local s = tostring(v):lower()
-                        if (s:find("emf") or s:find("level 5") or s:find("emf5") or s:find("emf 5")) then
-                            markEvidence("EMF5"); notify("⚡ EMF5 via notification!", C.EvidEMF, 5); break
-                        end
-                    end
-                end))
-            end
-        end
-        -- Scan EMF tool for NumberValue children (level indicators)
-        addConn("emf_tool_scan", RunService.Heartbeat:Connect(function()
-            if not S.Features["EMF Monitor"] or S.Evidence["EMF5"] then return end
-            for _, d in pairs(Workspace:GetDescendants()) do
-                if d:IsA("Tool") and (d.Name:lower():find("emf") or d.Name:lower():find("reader")) then
-                    for _, ch in pairs(d:GetChildren()) do
-                        if ch:IsA("NumberValue") and ch.Value >= 5 then
-                            markEvidence("EMF5"); notify("⚡ EMF5 from tool NumberValue!", C.EvidEMF, 5); return
-                        end
-                    end
-                end
-            end
-        end))
-        notify("⚡ EMF monitor active (visual scan + notify)", C.Yellow, 3)
-    end)
-
-    -- Spirit Box Monitor (FIXED v4.5: also hooks Notify for spirit responses + tone listener)
-    makeToggle(evidPage, "Spirit Box Monitor", "Detect spirit box responses (fixed)", 4, function(on)
-        rmConn("spiritbox_hook") rmConn("spirit_tone") rmConn("spirit_notify")
-        if not on then return end
-
-        if Events then
-            local sb = Events:FindFirstChild("AskSpiritBoxFromUI")
-            if sb and sb:IsA("RemoteEvent") then
-                addConn("spiritbox_hook", sb.OnClientEvent:Connect(function(...)
-                    markEvidence("SpiritBox")
-                    local args = {...}
-                    local responseStr = ""
-                    for _, v in ipairs(args) do responseStr ..= tostring(v) .. " " end
-                    notify("📻 Spirit Box response! " .. responseStr, C.EvidSpirit, 6)
-                end))
-            end
-            -- Also hook Notify for spirit box responses
-            local notifyEv = Events:FindFirstChild("Notify")
-            if notifyEv and notifyEv:IsA("RemoteEvent") then
-                addConn("spirit_notify", notifyEv.OnClientEvent:Connect(function(...)
-                    local args = {...}
-                    for _, v in ipairs(args) do
-                        local s = tostring(v):lower()
-                        if (s:find("spirit") or s:find("spiritbox")) and (s:find("response") or s:find("answer") or s:find("said") or s:find("reply")) then
-                            markEvidence("SpiritBox"); notify("📻 Spirit Box via notification!", C.EvidSpirit, 6); break
-                        end
-                    end
-                end))
-            end
-        end
-
-        local playerScripts = LocalPlayer:FindFirstChild("PlayerScripts")
-        if playerScripts then
-            local sounds = playerScripts:FindFirstChild("Sounds")
-            if sounds then
-                local tone = sounds:FindFirstChild("SpiritBoxTone")
-                if tone and tone:IsA("Sound") then
-                    addConn("spirit_tone", tone:GetPropertyChangedSignal("Volume"):Connect(function()
-                        if tone.Volume > 0.1 then
-                            markEvidence("SpiritBox")
-                            notify("📻 Spirit Box detected (tone active)!", C.EvidSpirit, 5)
-                        end
-                    end))
-                end
-            end
-        end
-
-        notify("📻 Spirit Box monitor active (event + notify)", C.Yellow, 3)
-    end)
-
-    -- Ghost Orb Detector (FIXED: more folders + broad part scan)
-    makeToggle(evidPage, "Ghost Orb Detector", "Monitor for ghost orbs", 5, function(on)
-        rmConn("orb_watch"); rmConn("orb_scan")
-        if not on then return end
-
-        local orbFolders = {"Airballs", "GhostOrb", "GhostOrbs", "Orbs", "Orb", "Particles", "FX"}
-
-        for _, fname in ipairs(orbFolders) do
-            local folder = Workspace:FindFirstChild(fname)
-            if folder then
-                if #folder:GetChildren() > 0 then markEvidence("GhostOrb") end
-                addConn("orb_watch_" .. fname, folder.ChildAdded:Connect(function()
-                    markEvidence("GhostOrb"); notify("🔮 Ghost Orb appeared in " .. fname .. "!", C.EvidOrb, 5)
-                end))
-            end
-        end
-
-        addConn("orb_scan", RunService.Heartbeat:Connect(function()
-            if not S.Features["Ghost Orb Detector"] or S.Evidence["GhostOrb"] then return end
-            for _, d in pairs(Workspace:GetDescendants()) do
-                local nm = d.Name:lower()
-                if (d:IsA("BasePart") or d:IsA("MeshPart") or d:IsA("Part")) and (nm:find("orb") or nm:find("airball") or nm:find("ball") and d.Transparency > 0.3) then
-                    markEvidence("GhostOrb"); notify("🔮 Ghost Orb found: " .. d.Name, C.EvidOrb, 5); return
-                end
-            end
-        end))
-        notify("🔮 Orb detector active", C.Green, 3)
-    end)
-
-    -- Inscription Detector (FIXED: multiple folder names)
-    makeToggle(evidPage, "Inscription Detector", "Watch for ghost writing", 6, function(on)
-        rmConn("inscr_watch") rmConn("inscr_scan")
-        if not on then return end
-        local inscrFolders = {"ScratchText", "GhostWriting", "GhostWritingDecals", "Writing", "Drawings", "Inscriptions"}
-        local found = false
-        for _, fname in ipairs(inscrFolders) do
-            local folder = Workspace:FindFirstChild(fname)
-            if folder then
-                addConn("inscr_watch_" .. fname, folder.ChildAdded:Connect(function()
-                    markEvidence("Inscription"); notify("✍ Inscription found in " .. fname .. "!", C.EvidInscript, 5)
-                end))
-                if #folder:GetChildren() > 0 then markEvidence("Inscription"); found = true end
-                notify("✍ Inscription folder found: " .. fname, C.Green, 3)
-                found = true
-            end
-        end
-        if not found then notify("⚠ No inscription folder found — will scan parts", C.Yellow, 3) end
-        -- Fallback: scan for writing/inscription parts
-        addConn("inscr_scan", RunService.Heartbeat:Connect(function()
-            if not S.Features["Inscription Detector"] or S.Evidence["Inscription"] then return end
-            for _, d in pairs(Workspace:GetDescendants()) do
-                local nm = d.Name:lower()
-                if (nm:find("inscript") or nm:find("writing") or nm:find("scratch") or nm:find("draw")) and (d:IsA("Part") or d:IsA("MeshPart") or d:IsA("Decal")) then
-                    markEvidence("Inscription"); notify("✍ Inscription found: " .. d.Name, C.EvidInscript, 5); return
-                end
-            end
-        end))
-    end)
-
-    -- Wither Detector (FIXED: hooks ObjectWithered remote + folder scan)
-    makeToggle(evidPage, "Wither Detector", "Monitor for wither effects (fixed)", 7, function(on)
-        rmConn("wither_remote"); rmConn("wither_watch")
-        if not on then return end
-
-        -- Hook the ObjectWithered remote
-        if Events then
-            local ow = Events:FindFirstChild("ObjectWithered")
-            if ow and ow:IsA("RemoteEvent") then
-                addConn("wither_remote", ow.OnClientEvent:Connect(function()
-                    markEvidence("Wither"); notify("🥀 Wither evidence detected!", C.EvidWither, 5)
-                end))
-                notify("🥀 Wither remote hooked", C.Green, 3)
-            end
-        end
-
-        -- Fallback: watch for wither/wilt in workspace
-        addConn("wither_watch", Workspace.DescendantAdded:Connect(function(d)
-            local nm = d.Name:lower()
-            if nm:find("wither") or nm:find("wilt") or nm:find("dead_plant") then
-                markEvidence("Wither"); notify("🥀 Wither evidence!", C.EvidWither, 5)
-            end
-        end))
-        notify("🥀 Wither detector active", C.Green, 3)
-    end)
-
-    -- Laser Detector (FIXED v4.5: more folders + notify hook + ghost transparency scan)
-    makeToggle(evidPage, "Laser Detector", "Watch for laser projector (ghost becomes slightly visible)", 8, function(on)
-        rmConn("laser_watch") rmConn("laser_scan") rmConn("laser_ghost") rmConn("laser_notify") rmConn("laser_remote")
-        if not on then return end
-        local laserFolders = {"LIDAR", "Laser", "LaserProjector", "Projector", "LiDAR", "Lasers"}
-        for _, fname in ipairs(laserFolders) do
-            local folder = Workspace:FindFirstChild(fname)
-            if folder then
-                if #folder:GetChildren() > 0 then markEvidence("Laser") end
-                addConn("laser_watch_" .. fname, folder.ChildAdded:Connect(function() markEvidence("Laser"); notify("🔴 Laser in " .. fname .. "!", C.EvidLaser, 5) end))
-            end
-        end
-        -- Hook the DetectedGhostWithLIDAR remote
-        if Events then
-            local dl = Events:FindFirstChild("DetectedGhostWithLIDAR")
-            if dl and dl:IsA("RemoteEvent") then
-                addConn("laser_remote", dl.OnClientEvent:Connect(function()
-                    markEvidence("Laser"); notify("🔴 LIDAR detected ghost silhouette!", C.EvidLaser, 5)
-                end))
-            end
-        end
-        -- Monitor ghost transparency
-        addConn("laser_ghost", RunService.Heartbeat:Connect(function()
-            if not S.Features["Laser Detector"] or S.Evidence["Laser"] then return end
-            local ghost = Workspace:FindFirstChild("Ghost")
-            if ghost then
-                local hrp = ghost:FindFirstChild("HumanoidRootPart")
-                if hrp and hrp.Transparency > 0.3 and hrp.Transparency < 0.8 then
-                    markEvidence("Laser"); notify("🔴 Ghost partially visible via laser! (" .. string.format("%.0f%%", (1 - hrp.Transparency) * 100) .. ")", C.EvidLaser, 5); return
-                end
-                for _, part in pairs(ghost:GetDescendants()) do
-                    if part:IsA("BasePart") and part.Transparency > 0.3 and part.Transparency < 0.8 then
-                        markEvidence("Laser"); notify("🔴 Ghost silhouette detected via laser!", C.EvidLaser, 5); return
-                    end
-                end
-            end
-        end))
-        -- Hook Notify for laser-related messages
-        if Events then
-            local notifyEv = Events:FindFirstChild("Notify")
-            if notifyEv and notifyEv:IsA("RemoteEvent") then
-                addConn("laser_notify", notifyEv.OnClientEvent:Connect(function(...)
-                    local args = {...}
-                    for _, v in ipairs(args) do
-                        local s = tostring(v):lower()
-                        if s:find("laser") or s:find("lidar") or s:find("projector") then
-                            markEvidence("Laser"); notify("🔴 Laser via notification!", C.EvidLaser, 5); break
-                        end
-                    end
-                end))
-            end
-        end
-        notify("🔴 Laser detector active (notify + ghost transparency)", C.Green, 3)
-    end)
-
-    -- Reset Evidence button
-    local resetBtn = Instance.new("Frame")
-    resetBtn.Size = UDim2.new(1, 0, 0, 36)
-    resetBtn.BackgroundColor3 = C.Red
-    resetBtn.BackgroundTransparency = 0.82
-    resetBtn.BorderSizePixel = 0
-    resetBtn.LayoutOrder = 20
-    resetBtn.Parent = evidPage
-    corner(resetBtn, UDim.new(0, 8))
-    stroke(resetBtn, C.Red, 1, 0.5)
-
-    local resetLbl = Instance.new("TextLabel")
-    resetLbl.Size = UDim2.new(1, 0, 1, 0)
-    resetLbl.BackgroundTransparency = 1
-    resetLbl.Text = "🔄 Reset All Evidence"
-    resetLbl.TextColor3 = C.Red
-    resetLbl.Font = C.FontMed
-    resetLbl.TextSize = 12
-    resetLbl.Parent = resetBtn
-
-    local resetClick = Instance.new("TextButton")
-    resetClick.Size = UDim2.new(1, 0, 1, 0)
-    resetClick.BackgroundTransparency = 1
-    resetClick.Text = ""
-    resetClick.Parent = resetBtn
-    resetClick.MouseButton1Click:Connect(resetEvidence)
-
-    resetBtn.MouseEnter:Connect(function() tw(resetBtn, {BackgroundTransparency = 0.55}, C.SpeedFast) end)
-    resetBtn.MouseLeave:Connect(function() tw(resetBtn, {BackgroundTransparency = 0.82}, C.SpeedFast) end)
-
+    addConn("matchinfo_upd", RunService.Heartbeat:Connect(function()
+        local status = S._matchInProgress and "Fighting" or "Idle"
+        matchStatusLabel.Text = "Status: " .. status
+        matchRoundLabel.Text = "Round: " .. S._currentRound .. "/" .. S._maxRounds
+        matchKillsLabel.Text = "Kills: " .. (S._myKills or 0)
+        matchDeathsLabel.Text = "Deaths: " .. (S._myDeaths or 0)
+    end))
+    --   PAGE: SWORDS
     -- ═══════════════════════════════════════
-    --   PAGE: GHOST ID (FIXED: accurate matching)
-    -- ═══════════════════════════════════════
-    local ghostPage = makePage("Ghost ID")
+    local swordsPage = makePage("Swords")
 
-    local evidStatusFrame = Instance.new("Frame")
-    evidStatusFrame.Size = UDim2.new(1, 0, 0, 90)
-    evidStatusFrame.BackgroundColor3 = C.Bg3
-    evidStatusFrame.BackgroundTransparency = 0.25
-    evidStatusFrame.BorderSizePixel = 0
-    evidStatusFrame.LayoutOrder = 1
-    evidStatusFrame.Parent = ghostPage
-    corner(evidStatusFrame, UDim.new(0, 8))
+    local swordsTitle = Instance.new("TextLabel")
+    swordsTitle.Size = UDim2.new(1, 0, 0, 16)
+    swordsTitle.BackgroundTransparency = 1
+    swordsTitle.Text = "SWORD INVENTORY"
+    swordsTitle.TextColor3 = C.AccentDim
+    swordsTitle.Font = C.Font
+    swordsTitle.TextSize = 9
+    swordsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    swordsTitle.LayoutOrder = 0
+    swordsTitle.Parent = swordsPage
 
-    local evidTitle = Instance.new("TextLabel")
-    evidTitle.Size = UDim2.new(1, 0, 0, 16)
-    evidTitle.Position = UDim2.new(0, 10, 0, 4)
-    evidTitle.BackgroundTransparency = 1
-    evidTitle.Text = "Found evidences:"
-    evidTitle.TextColor3 = C.AccentDim
-    evidTitle.Font = C.Font
-    evidTitle.TextSize = 9
-    evidTitle.TextXAlignment = Enum.TextXAlignment.Left
-    evidTitle.Parent = evidStatusFrame
+    for i, sword in ipairs(SwordDB) do
+        local gf = Instance.new("Frame")
+        gf.Size = UDim2.new(1, 0, 0, 36)
+        gf.BackgroundColor3 = C.Bg3
+        gf.BackgroundTransparency = 0.4
+        gf.BorderSizePixel = 0
+        gf.LayoutOrder = i
+        gf.Parent = swordsPage
+        corner(gf, UDim.new(0, 6))
+        stroke(gf, Rarities[sword.rarity] or C.AccentDim, 1, 0.65)
 
-    local evidGrid = Instance.new("Frame")
-    evidGrid.Size = UDim2.new(1, -20, 0, 56)
-    evidGrid.Position = UDim2.new(0, 10, 0, 22)
-    evidGrid.BackgroundTransparency = 1
-    evidGrid.Parent = evidStatusFrame
+        local rarityCol = Rarities[sword.rarity] or C.Text2
+        local nm = Instance.new("TextLabel")
+        nm.Size = UDim2.new(0.4, 0, 0, 16)
+        nm.Position = UDim2.new(0, 10, 0, 3)
+        nm.BackgroundTransparency = 1
+        nm.Text = sword.name
+        nm.TextColor3 = rarityCol
+        nm.Font = C.FontMed
+        nm.TextSize = 11
+        nm.TextXAlignment = Enum.TextXAlignment.Left
+        nm.Parent = gf
 
-    local evidGridLayout = Instance.new("UIGridLayout")
-    evidGridLayout.CellSize = UDim2.new(0, 58, 0, 24)
-    evidGridLayout.CellPadding = UDim2.new(0, 4, 0, 4)
-    evidGridLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    evidGridLayout.Parent = evidGrid
+        local rarityLbl = Instance.new("TextLabel")
+        rarityLbl.Size = UDim2.new(0.25, 0, 0, 12)
+        rarityLbl.Position = UDim2.new(0, 10, 0, 20)
+        rarityLbl.BackgroundTransparency = 1
+        rarityLbl.Text = sword.rarity
+        rarityLbl.TextColor3 = rarityCol
+        rarityLbl.Font = C.FontReg
+        rarityLbl.TextSize = 8
+        rarityLbl.TextXAlignment = Enum.TextXAlignment.Left
+        rarityLbl.Parent = gf
 
-    local evidIndicators = {}
-    for i, ev in ipairs(EvidenceTypes) do
-        local ind = Instance.new("Frame")
-        ind.Name = ev.id
-        ind.BackgroundColor3 = C.Bg4
-        ind.BackgroundTransparency = 0.25
-        ind.BorderSizePixel = 0
-        ind.LayoutOrder = i
-        ind.Parent = evidGrid
-        corner(ind, UDim.new(0, 4))
+        local statsTxt = Instance.new("TextLabel")
+        statsTxt.Size = UDim2.new(0.3, 0, 0, 14)
+        statsTxt.Position = UDim2.new(0.4, 0, 0.5, -7)
+        statsTxt.BackgroundTransparency = 1
+        statsTxt.Text = "Dmg:" .. sword.damage .. " Spd:" .. sword.speed
+        statsTxt.TextColor3 = C.Text2
+        statsTxt.Font = C.FontReg
+        statsTxt.TextSize = 8
+        statsTxt.Parent = gf
 
-        local il = Instance.new("TextLabel")
-        il.Size = UDim2.new(1, 0, 1, 0)
-        il.BackgroundTransparency = 1
-        il.Text = ev.icon
-        il.TextSize = 11
-        il.TextColor3 = C.Text3
-        il.Font = C.FontReg
-        il.Parent = ind
+        local equipBtn = Instance.new("TextButton")
+        equipBtn.Size = UDim2.new(0, 60, 0, 24)
+        equipBtn.Position = UDim2.new(1, -68, 0.5, -12)
+        equipBtn.BackgroundColor3 = rarityCol
+        equipBtn.BackgroundTransparency = 0.35
+        equipBtn.BorderSizePixel = 0
+        equipBtn.Text = "Equip"
+        equipBtn.TextColor3 = C.Text1
+        equipBtn.Font = C.FontMed
+        equipBtn.TextSize = 10
+        equipBtn.Parent = gf
+        corner(equipBtn, UDim.new(0, 5))
 
-        local iClick = Instance.new("TextButton")
-        iClick.Size = UDim2.new(1, 0, 1, 0)
-        iClick.BackgroundTransparency = 1
-        iClick.Text = ""
-        iClick.Parent = ind
-        iClick.MouseButton1Click:Connect(function()
-            S.Evidence[ev.id] = not S.Evidence[ev.id]
-            if S.Evidence[ev.id] then
-                notify(ev.icon .. " " .. ev.label .. " marked", ev.color, 2)
-            else
-                notify(ev.icon .. " " .. ev.label .. " unmarked", C.Text3, 2)
+        local eqRemote = remotes and remotes:FindFirstChild("EquipEvent")
+        equipBtn.MouseButton1Click:Connect(function()
+            if eqRemote then
+                eqRemote:FireServer("WeaponEquip", sword.name)
+                notify("🗡 Equipped " .. sword.name, rarityCol, 3)
             end
-            updateHUD(); updateGhostPanel(); updateEvidencePanel()
         end)
-
-        evidIndicators[ev.id] = {frame = ind, label = il}
-    end
-    S._evidPanel = evidIndicators
-
-    local ghostResults = Instance.new("Frame")
-    ghostResults.Name = "GhostResults"
-    ghostResults.Size = UDim2.new(1, 0, 0, 30)
-    ghostResults.BackgroundTransparency = 1
-    ghostResults.LayoutOrder = 2
-    ghostResults.Parent = ghostPage
-    ghostResults.AutomaticSize = Enum.AutomaticSize.Y
-
-    local ghostResultsLayout = Instance.new("UIListLayout")
-    ghostResultsLayout.Padding = UDim.new(0, 4)
-    ghostResultsLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ghostResultsLayout.Parent = ghostResults
-
-    local ghostResultsTitle = Instance.new("TextLabel")
-    ghostResultsTitle.Size = UDim2.new(1, 0, 0, 16)
-    ghostResultsTitle.BackgroundTransparency = 1
-    ghostResultsTitle.Text = "Found evidences:"
-    ghostResultsTitle.TextColor3 = C.AccentDim
-    ghostResultsTitle.Font = C.Font
-    ghostResultsTitle.TextSize = 9
-    ghostResultsTitle.TextXAlignment = Enum.TextXAlignment.Left
-    ghostResultsTitle.LayoutOrder = 0
-    ghostResultsTitle.Parent = ghostResults
-
-    S._ghostPanel = ghostResults
-
-    -- PAGE: ABILITIES
-    local abilPage = makePage("Abilities")
-
-    makeToggle(abilPage, "Ability Tracker", "Detect ghost abilities & log them", 1, function(on)
-        rmConn("abil_teleport") rmConn("abil_glass") rmConn("abil_add") rmConn("abil_power")
-        if S._abilConns then
-            for _, c in pairs(S._abilConns) do pcall(c.Disconnect, c) end
-        end
-        S._abilConns = {}
-        if not on then return end
-
-        local lastGhostPos = nil
-        local lastGhostRoom = nil
-        local lastTeleportTime = 0
-        local lastPowerOutTime = 0
-
-        -- Track ghost teleportation (FIXED: require BOTH room change AND large distance, debounce 10s)
-        addConn("abil_teleport", RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if not S.Features["Ability Tracker"] then return end
-                local ghost = Workspace:FindFirstChild("Ghost")
-                if ghost then
-                    local hrp = ghost:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local pos = hrp.Position
-                        local room = ghost:GetAttribute("CurrentRoom")
-                        if lastGhostRoom and room and room ~= lastGhostRoom and lastGhostPos then
-                            local dist = (pos - lastGhostPos).Magnitude
-                            if dist > 30 then
-                                local now = tick()
-                                if now - lastTeleportTime > 10 then
-                                    logAbility("TeleportRoom", "Entity/Skinwalker")
-                                    lastTeleportTime = now
-                                end
-                            end
-                        end
-                        lastGhostPos = pos
-                        lastGhostRoom = room
-                    end
-                else
-                    lastGhostPos = nil
-                    lastGhostRoom = nil
-                end
-            end)
-        end))
-
-        -- Connect AttributeChanged on any instance that matters (FIXED: DescendantAttributeChanged is NOT a valid event)
-        local function connectEvents(inst)
-            if not inst:IsA("BasePart") and not inst:IsA("Tool") then return end
-            local nm = inst.Name
-            -- Light switches (flickering lights)
-            if nm:find("LightSwitch") or nm:find("Switch") then
-                local conn = inst.AttributeChanged:Connect(function(attr)
-                    pcall(function()
-                        if not S.Features["Ability Tracker"] then return end
-                        local a = tostring(attr)
-                        if a == "State" then
-                            local state = inst:GetAttribute("State")
-                            if state ~= nil then
-                                logAbility("FlickerLights", "Leviathan/Skinwalker")
-                            end
-                        end
-                    end)
-                end)
-                table.insert(S._abilConns, conn)
-                return
-            end
-            -- Equipment flickering (Leviathan)
-            local itemNames = {"EMF", "Spirit Box", "Flashlight", "Blacklight", "Laser", "Radio", "Walkie"}
-            for _, item in ipairs(itemNames) do
-                if nm:find(item) then
-                    local conn = inst.AttributeChanged:Connect(function(attr)
-                        pcall(function()
-                            if not S.Features["Ability Tracker"] then return end
-                            local a = tostring(attr)
-                            if a == "Enabled" or a == "State" or a == "Power" then
-                                logAbility("FlickerItems", "Leviathan")
-                            end
-                        end)
-                    end)
-                    table.insert(S._abilConns, conn)
-                    return
-                end
-            end
-        end
-
-        -- Connect to existing descendants
-        for _, d in pairs(Workspace:GetDescendants()) do
-            pcall(connectEvents, d)
-        end
-
-        -- Watch for new descendants
-        addConn("abil_add", Workspace.DescendantAdded:Connect(function(d)
-            task.wait(0.5)
-            pcall(function() connectEvents(d) end)
-        end))
-
-        -- Track glass breaking (includes shatter, broken, crack)
-        addConn("abil_glass", Workspace.DescendantRemoving:Connect(function(d)
-            pcall(function()
-                if not S.Features["Ability Tracker"] or not d then return end
-                local lname = d.Name:lower()
-                if lname:find("glass") or lname:find("shatter") or lname:find("broken") or lname:find("crack") then
-                    logAbility("BreakGlass", "Banshee/Nightmare")
-                end
-            end)
-        end))
-
-        -- Track power outage (lights go completely out during day)
-        addConn("abil_power", RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if not S.Features["Ability Tracker"] then return end
-                local now = tick()
-                if now - lastPowerOutTime < 30 then return end
-                if Lighting.Brightness < 0.15 and Lighting.ClockTime > 7 and Lighting.ClockTime < 19 then
-                    if Workspace:FindFirstChild("FuseBox") or Workspace:FindFirstChild("PowerBox") then
-                        logAbility("FlickerLights", "Leviathan/Skinwalker")
-                        lastPowerOutTime = now
-                    end
-                end
-            end)
-        end))
-
-        -- Track SpiritCandle attribute changes (Spirit/Skinwalker blue flame)
-        addConn("abil_candle", RunService.Heartbeat:Connect(function()
-            pcall(function()
-                if not S.Features["Ability Tracker"] then return end
-                for _, d in pairs(Workspace:GetDescendants()) do
-                    if d:GetAttribute("SpiritCandle") == true then
-                        logAbility("BlueFlame", "Spirit/Skinwalker")
-                        return
-                    end
-                end
-            end)
-        end))
-
-        notify("⚡ Ability tracker active — watching for ghost abilities, light switches, power, glass", C.Accent, 3)
-    end)
-
-    -- Ability Reference panel
-    local abilityRefFrame = Instance.new("Frame")
-    abilityRefFrame.Size = UDim2.new(1, 0, 0, 30); abilityRefFrame.BackgroundTransparency = 1
-    abilityRefFrame.LayoutOrder = 2; abilityRefFrame.Parent = abilPage
-    abilityRefFrame.AutomaticSize = Enum.AutomaticSize.Y
-
-    local abilRefLayout = Instance.new("UIListLayout"); abilRefLayout.Padding = UDim.new(0, 3)
-    abilRefLayout.SortOrder = Enum.SortOrder.LayoutOrder; abilRefLayout.Parent = abilityRefFrame
-
-    local abilRefTitle = Instance.new("TextLabel"); abilRefTitle.Size = UDim2.new(1, 0, 0, 16)
-    abilRefTitle.BackgroundTransparency = 1; abilRefTitle.Text = "GHOST ABILITIES REFERENCE"
-    abilRefTitle.TextColor3 = C.AccentDim; abilRefTitle.Font = C.Font; abilRefTitle.TextSize = 9
-    abilRefTitle.TextXAlignment = Enum.TextXAlignment.Left; abilRefTitle.LayoutOrder = 0; abilRefTitle.Parent = abilityRefFrame
-
-    local abilOrder = {"Entity","Banshee","Nightmare","Ravager","Leviathan","Spirit","Skinwalker","Aswang","Demon","Dullahan","Dybbuk","Ghoul","Keres","Oni","Phantom","Revenant","Shadow","Siren","Specter","Umbra","Vex","Vesper","Wendigo","Wisp","Wraith"}
-    for _, gName in ipairs(abilOrder) do
-        local info = GhostAbilities[gName]
-        if info then
-            local gf = Instance.new("Frame"); gf.Size = UDim2.new(1, 0, 0, 28)
-            gf.BackgroundColor3 = C.Bg3; gf.BackgroundTransparency = 0.45; gf.BorderSizePixel = 0; gf.Parent = abilityRefFrame
-            corner(gf, UDim.new(0, 5))
-            local nm = Instance.new("TextLabel"); nm.Size = UDim2.new(0, 0, 1, 0); nm.Position = UDim2.new(0, 8, 0, 0)
-            nm.BackgroundTransparency = 1; nm.Text = info.icon .. " " .. gName; nm.TextColor3 = C.Text1
-            nm.Font = C.FontMed; nm.TextSize = 10; nm.TextXAlignment = Enum.TextXAlignment.Left
-            nm.AutomaticSize = Enum.AutomaticSize.X; nm.Parent = gf
-            local desc = Instance.new("TextLabel"); desc.Size = UDim2.new(1, -20, 1, 0); desc.Position = UDim2.new(0, 8, 0, 0)
-            desc.BackgroundTransparency = 1; desc.Text = info.desc; desc.TextColor3 = C.Text3
-            desc.Font = C.FontReg; desc.TextSize = 9; desc.TextXAlignment = Enum.TextXAlignment.Right; desc.Parent = gf
-        end
     end
 
-    -- Ability Log
-    local abilityLogFrame = Instance.new("Frame"); abilityLogFrame.Name = "AbilityLog"
-    abilityLogFrame.Size = UDim2.new(1, 0, 0, 30); abilityLogFrame.BackgroundTransparency = 1
-    abilityLogFrame.LayoutOrder = 3; abilityLogFrame.Parent = abilPage
-    abilityLogFrame.AutomaticSize = Enum.AutomaticSize.Y
-
-    local abilLogLayout = Instance.new("UIListLayout"); abilLogLayout.Padding = UDim.new(0, 3)
-    abilLogLayout.SortOrder = Enum.SortOrder.LayoutOrder; abilLogLayout.Parent = abilityLogFrame
-
-    local abilLogTitle = Instance.new("TextLabel"); abilLogTitle.Size = UDim2.new(1, 0, 0, 16)
-    abilLogTitle.BackgroundTransparency = 1; abilLogTitle.Text = "ABILITY LOG (most recent)"
-    abilLogTitle.TextColor3 = C.AccentDim; abilLogTitle.Font = C.Font; abilLogTitle.TextSize = 9
-    abilLogTitle.TextXAlignment = Enum.TextXAlignment.Left; abilLogTitle.LayoutOrder = 0; abilLogTitle.Parent = abilityLogFrame
-
-    function updateAbilityPanel()
-        for _, ch in pairs(abilityLogFrame:GetChildren()) do
-            if ch:IsA("Frame") and ch.Name ~= "AbilityLog" then ch:Destroy() end
-        end
-        for i, entry in ipairs(S._abilityLog) do
-            if i > 15 then break end
-            local gf = Instance.new("Frame"); gf.Size = UDim2.new(1, 0, 0, 22)
-            gf.BackgroundColor3 = C.Bg3; gf.BackgroundTransparency = 0.5; gf.BorderSizePixel = 0; gf.LayoutOrder = i; gf.Parent = abilityLogFrame
-            corner(gf, UDim.new(0, 4))
-            local timeL = Instance.new("TextLabel"); timeL.Size = UDim2.new(0, 45, 1, 0); timeL.Position = UDim2.new(0, 6, 0, 0)
-            timeL.BackgroundTransparency = 1; timeL.Text = entry.time; timeL.TextColor3 = C.Text3; timeL.Font = C.FontReg; timeL.TextSize = 9; timeL.TextXAlignment = Enum.TextXAlignment.Left; timeL.Parent = gf
-            local abilL = Instance.new("TextLabel"); abilL.Size = UDim2.new(1, -60, 1, 0); abilL.Position = UDim2.new(0, 52, 0, 0)
-            abilL.BackgroundTransparency = 1; abilL.Text = entry.ability; abilL.TextColor3 = C.AbilityColors[entry.ability] or C.AccentBright
-            abilL.Font = C.FontMed; abilL.TextSize = 9; abilL.TextXAlignment = Enum.TextXAlignment.Left; abilL.Parent = gf
-            local ghostL = Instance.new("TextLabel"); ghostL.Size = UDim2.new(0, 70, 1, 0); ghostL.Position = UDim2.new(1, -74, 0, 0)
-            ghostL.BackgroundTransparency = 1; ghostL.Text = entry.ghost or ""; ghostL.TextColor3 = C.Text3; ghostL.Font = C.FontReg; ghostL.TextSize = 8; ghostL.TextXAlignment = Enum.TextXAlignment.Right; ghostL.Parent = gf
-        end
-    end
-
-    -- Ability Results Panel
-    local abilResultsFrame = Instance.new("Frame"); abilResultsFrame.Name = "AbilityResults"
-    abilResultsFrame.Size = UDim2.new(1, 0, 0, 30); abilResultsFrame.BackgroundTransparency = 1
-    abilResultsFrame.LayoutOrder = 4; abilResultsFrame.Parent = abilPage
-    abilResultsFrame.AutomaticSize = Enum.AutomaticSize.Y
-
-    local abilResLayout = Instance.new("UIListLayout"); abilResLayout.Padding = UDim.new(0, 4)
-    abilResLayout.SortOrder = Enum.SortOrder.LayoutOrder; abilResLayout.Parent = abilResultsFrame
-
-    local abilResTitle = Instance.new("TextLabel"); abilResTitle.Size = UDim2.new(1, 0, 0, 16)
-    abilResTitle.BackgroundTransparency = 1; abilResTitle.Text = "GHOST ANALYSIS BY ABILITY"
-    abilResTitle.TextColor3 = C.AccentDim; abilResTitle.Font = C.Font; abilResTitle.TextSize = 9
-    abilResTitle.TextXAlignment = Enum.TextXAlignment.Left; abilResTitle.LayoutOrder = 0; abilResTitle.Parent = abilResultsFrame
-
-    S._abilResultsPanel = abilResultsFrame
-
-    local function updateAbilityResultsPanel()
-        for _, ch in pairs(abilResultsFrame:GetChildren()) do
-            if ch:IsA("Frame") then ch:Destroy() end
-        end
-        local byAbil = getPossibleGhostsByAbility()
-        if #byAbil == 0 then
-            local empty = Instance.new("Frame"); empty.Size = UDim2.new(1, 0, 0, 24)
-            empty.BackgroundTransparency = 1; empty.LayoutOrder = 1; empty.Parent = abilResultsFrame
-            local lbl = Instance.new("TextLabel"); lbl.Size = UDim2.new(1, 0, 1, 0)
-            lbl.BackgroundTransparency = 1; lbl.Text = "No abilities detected yet — ghost abilities will appear here"
-            lbl.TextColor3 = C.Text3; lbl.Font = C.FontReg; lbl.TextSize = 9; lbl.Parent = empty
-            return
-        end
-        for i, g in ipairs(byAbil) do
-            if i > 25 then break end
-            local gf = Instance.new("Frame"); gf.Size = UDim2.new(1, 0, 0, 40)
-            gf.BackgroundColor3 = C.Bg3; gf.BackgroundTransparency = 0.35; gf.BorderSizePixel = 0
-            gf.LayoutOrder = i; gf.Parent = abilResultsFrame; corner(gf, UDim.new(0, 6))
-            if g.confidence > 0 and i == 1 then stroke(gf, C.Green, 1, 0.4) end
-            local gName = Instance.new("TextLabel"); gName.Size = UDim2.new(0.5, 0, 0, 16); gName.Position = UDim2.new(0, 10, 0, 4)
-            gName.BackgroundTransparency = 1; gName.Text = g.confidence > 0 and (g.icon .. " " .. g.name) or g.name
-            gName.TextColor3 = g.confidence > 0 and C.Text1 or C.Text3; gName.Font = C.FontMed; gName.TextSize = 12
-            gName.TextXAlignment = Enum.TextXAlignment.Left; gName.Parent = gf
-            local confBg = Instance.new("Frame"); confBg.Size = UDim2.new(0, 60, 0, 6); confBg.Position = UDim2.new(1, -76, 0, 8)
-            confBg.BackgroundColor3 = C.Bg4; confBg.BorderSizePixel = 0; confBg.Parent = gf; corner(confBg, UDim.new(1, 0))
-            local confFill = Instance.new("Frame"); confFill.Size = UDim2.new(g.confidence / 100, 0, 1, 0)
-            confFill.BackgroundColor3 = g.confidence >= 66 and C.Green or g.confidence >= 33 and C.Yellow or C.Text3
-            confFill.BorderSizePixel = 0; confFill.Parent = confBg; corner(confFill, UDim.new(1, 0))
-            local confTxt = Instance.new("TextLabel"); confTxt.Size = UDim2.new(0, 28, 0, 12); confTxt.Position = UDim2.new(1, -30, 0, 5)
-            confTxt.BackgroundTransparency = 1; confTxt.Text = g.confidence .. "%"; confTxt.TextColor3 = C.Text3; confTxt.Font = C.FontReg; confTxt.TextSize = 9; confTxt.Parent = gf
-            if #g.abilities > 0 then
-                local abilTags = Instance.new("TextLabel"); abilTags.Size = UDim2.new(1, -16, 0, 12); abilTags.Position = UDim2.new(0, 10, 0, 23)
-                abilTags.BackgroundTransparency = 1; abilTags.Font = C.FontReg; abilTags.TextSize = 9
-                abilTags.TextXAlignment = Enum.TextXAlignment.Left; abilTags.Parent = gf
-                local parts = {}
-                for _, a in ipairs(g.abilities) do
-                    local detected = S.DetectedAbilities[a]
-                    local clr = detected and (C.AbilityColors[a] or C.Green) or C.Text3
-                    local m = detected and "✓" or "○"
-                    table.insert(parts, m .. a)
-                end
-                abilTags.Text = table.concat(parts, "  ")
-                abilTags.TextColor3 = g.confidence > 0 and C.Text1 or C.Text3
-            end
-        end
-    end
-
-    local origUpdAbil = updateAbilityPanel
-    updateAbilityPanel = function()
-        origUpdAbil()
-        pcall(updateAbilityResultsPanel)
-    end
-
+    --   PAGE: ABILITIES
     -- ═══════════════════════════════════════
-    --   PAGE: SURVIVAL
-    -- ═══════════════════════════════════════
-    local survPage = makePage("Survival")
+    local abilsPage = makePage("Abilities")
 
-    makeToggle(survPage, "Fullbright", "Max brightness, see everything", 1, function(on)
+    local abilsTitle = Instance.new("TextLabel")
+    abilsTitle.Size = UDim2.new(1, 0, 0, 16)
+    abilsTitle.BackgroundTransparency = 1
+    abilsTitle.Text = "SPECIAL ABILITIES"
+    abilsTitle.TextColor3 = C.AccentDim
+    abilsTitle.Font = C.Font
+    abilsTitle.TextSize = 9
+    abilsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    abilsTitle.LayoutOrder = 0
+    abilsTitle.Parent = abilsPage
+
+    for i, abil in ipairs(AbilityDataDB) do
+        local gf = Instance.new("Frame")
+        gf.Size = UDim2.new(1, 0, 0, 36)
+        gf.BackgroundColor3 = C.Bg3
+        gf.BackgroundTransparency = 0.4
+        gf.BorderSizePixel = 0
+        gf.LayoutOrder = i
+        gf.Parent = abilsPage
+        corner(gf, UDim.new(0, 6))
+
+        local nm = Instance.new("TextLabel")
+        nm.Size = UDim2.new(0.35, 0, 0, 16)
+        nm.Position = UDim2.new(0, 10, 0, 3)
+        nm.BackgroundTransparency = 1
+        nm.Text = abil.name
+        nm.TextColor3 = C.Text1
+        nm.Font = C.FontMed
+        nm.TextSize = 11
+        nm.TextXAlignment = Enum.TextXAlignment.Left
+        nm.Parent = gf
+
+        local descLbl = Instance.new("TextLabel")
+        descLbl.Size = UDim2.new(0.35, 0, 0, 12)
+        descLbl.Position = UDim2.new(0, 10, 0, 20)
+        descLbl.BackgroundTransparency = 1
+        descLbl.Text = abil.desc
+        descLbl.TextColor3 = C.Text3
+        descLbl.Font = C.FontReg
+        descLbl.TextSize = 8
+        descLbl.TextXAlignment = Enum.TextXAlignment.Left
+        descLbl.Parent = gf
+
+        local priceTxt = Instance.new("TextLabel")
+        priceTxt.Size = UDim2.new(0.2, 0, 0, 14)
+        priceTxt.Position = UDim2.new(0.55, 0, 0.5, -7)
+        priceTxt.BackgroundTransparency = 1
+        priceTxt.Text = abil.keysPrice .. "K"
+        priceTxt.TextColor3 = C.Yellow
+        priceTxt.Font = C.FontReg
+        priceTxt.TextSize = 8
+        priceTxt.Parent = gf
+
+        local selectBtn = Instance.new("TextButton")
+        selectBtn.Size = UDim2.new(0, 60, 0, 24)
+        selectBtn.Position = UDim2.new(1, -68, 0.5, -12)
+        selectBtn.BackgroundColor3 = C.Purple
+        selectBtn.BackgroundTransparency = 0.35
+        selectBtn.BorderSizePixel = 0
+        selectBtn.Text = "Select"
+        selectBtn.TextColor3 = C.Text1
+        selectBtn.Font = C.FontMed
+        selectBtn.TextSize = 10
+        selectBtn.Parent = gf
+        corner(selectBtn, UDim.new(0, 5))
+
+        local abilShopEvent = remotes and remotes:FindFirstChild("AbilityShopEvent")
+        selectBtn.MouseButton1Click:Connect(function()
+            if abilShopEvent then
+                abilShopEvent:FireServer(abil.name, false)
+                notify("⚡ Selected " .. abil.name, C.Purple, 3)
+            end
+        end)
+    end
+
+    --   PAGE: VISUAL
+    -- ═══════════════════════════════════════
+    local visPage = makePage("Visual")
+
+    makeToggle(visPage, "Fullbright", "Max brightness, clear vision", 1, function(on)
         if on then
             S._origLight = {
                 Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime,
@@ -3012,175 +2358,63 @@ local function buildHub()
         end
     end)
 
-    makeToggle(survPage, "Night Vision", "Green-tinted enhanced visibility", 2, function(on)
-        if on then
-            local cc = Instance.new("ColorCorrectionEffect")
-            cc.Name = "HubNV"; cc.Brightness = 0.15; cc.Contrast = 0.1
-            cc.Saturation = -0.5; cc.TintColor = Color3.fromRGB(130, 255, 130)
-            cc.Parent = Lighting
-        else
-            local cc = Lighting:FindFirstChild("HubNV")
-            if cc then cc:Destroy() end
+    -- FOV Slider
+    local fovFrame = Instance.new("Frame")
+    fovFrame.Size = UDim2.new(1, 0, 0, 44)
+    fovFrame.BackgroundColor3 = C.Bg3
+    fovFrame.BackgroundTransparency = 0.45
+    fovFrame.BorderSizePixel = 0
+    fovFrame.LayoutOrder = 2
+    fovFrame.Parent = visPage
+    corner(fovFrame, UDim.new(0, 8))
+
+    local fovLabel = Instance.new("TextLabel")
+    fovLabel.Size = UDim2.new(0.6, 0, 0, 16)
+    fovLabel.Position = UDim2.new(0, 12, 0, 6)
+    fovLabel.BackgroundTransparency = 1
+    fovLabel.Text = "Field of View"
+    fovLabel.TextColor3 = C.Text1
+    fovLabel.Font = C.FontMed
+    fovLabel.TextSize = 12
+    fovLabel.TextXAlignment = Enum.TextXAlignment.Left
+    fovLabel.Parent = fovFrame
+
+    local fovValue = Instance.new("TextLabel")
+    fovValue.Size = UDim2.new(0.3, 0, 0, 16)
+    fovValue.Position = UDim2.new(0.7, 0, 0, 6)
+    fovValue.BackgroundTransparency = 1
+    fovValue.Text = "70"
+    fovValue.TextColor3 = C.Accent
+    fovValue.Font = C.FontMed
+    fovValue.TextSize = 12
+    fovValue.Parent = fovFrame
+
+    local fovSlider = Instance.new("TextBox")
+    fovSlider.Size = UDim2.new(0.9, -24, 0, 18)
+    fovSlider.Position = UDim2.new(0.05, 0, 0, 22)
+    fovSlider.BackgroundColor3 = C.Bg4
+    fovSlider.BackgroundTransparency = 0.2
+    fovSlider.BorderSizePixel = 0
+    fovSlider.PlaceholderText = "70"
+    fovSlider.Text = ""
+    fovSlider.TextColor3 = C.Text1
+    fovSlider.PlaceholderColor3 = C.Text3
+    fovSlider.Font = C.FontReg
+    fovSlider.TextSize = 11
+    fovSlider.Parent = fovFrame
+    corner(fovSlider, UDim.new(0, 4))
+
+    fovSlider.FocusLost:Connect(function(enter)
+        if enter then
+            local val = tonumber(fovSlider.Text) or 70
+            val = math.clamp(val, 40, 120)
+            Camera.FieldOfView = val
+            fovValue.Text = tostring(val)
+            fovSlider.Text = ""
         end
     end)
 
-    makeToggle(survPage, "Infinite Stamina", "Prevent walkspeed reduction", 3, function(on)
-        rmConn("stamina")
-        if not on then return end
-        addConn("stamina", RunService.Heartbeat:Connect(function()
-            if not S.Features["Infinite Stamina"] then return end
-            local c = LocalPlayer.Character
-            if c then
-                local h = c:FindFirstChildOfClass("Humanoid")
-                if h and h.WalkSpeed < 16 then h.WalkSpeed = 16 end
-            end
-        end))
-    end)
-
-    makeToggle(survPage, "Anti-Death", "Keep health at maximum", 4, function(on)
-        rmConn("antideath_char")
-        rmConn("antideath_health")
-        rmConn("antideath_state")
-        if not on then return end
-
-        local function protectCharacter(char)
-            if not S.Features["Anti-Death"] then return end
-            if not char then return end
-
-            local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
-            if not S.Features["Anti-Death"] then return end
-            if not hum or not hum.Parent then return end
-
-            pcall(function()
-                hum.BreakJointsOnDeath = false
-            end)
-            pcall(function()
-                hum.RequiresNeck = false
-            end)
-            pcall(function()
-                if hum.MaxHealth < 100 then
-                    hum.MaxHealth = 100
-                end
-            end)
-
-            local function restoreHealth()
-                if not S.Features["Anti-Death"] then return end
-                if hum.Parent and hum.Health < hum.MaxHealth then
-                    pcall(function()
-                        hum.Health = hum.MaxHealth
-                    end)
-                end
-            end
-
-            restoreHealth()
-
-            rmConn("antideath_health")
-            addConn("antideath_health", hum:GetPropertyChangedSignal("Health"):Connect(function()
-                if not S.Features["Anti-Death"] then return end
-                if hum.Health < hum.MaxHealth then
-                    task.defer(restoreHealth)
-                end
-            end))
-
-            rmConn("antideath_state")
-            addConn("antideath_state", hum.StateChanged:Connect(function(_, state)
-                if not S.Features["Anti-Death"] then return end
-                if state == Enum.HumanoidStateType.Dead then
-                    task.defer(restoreHealth)
-                end
-            end))
-        end
-
-        addConn("antideath_char", LocalPlayer.CharacterAdded:Connect(protectCharacter))
-        if LocalPlayer.Character then
-            task.spawn(protectCharacter, LocalPlayer.Character)
-        end
-    end)
-
-    -- Auto Hide on Hunt (FIXED: uses Ghost:Hunting attribute)
-    makeToggle(survPage, "Auto Hide on Hunt", "TP into nearest closet when hunt starts", 5, function(on)
-        rmConn("hunt_watch")
-        if not on then return end
-
-        addConn("hunt_watch", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto Hide on Hunt"] then return end
-            local ghost = Workspace:FindFirstChild("Ghost")
-            if ghost then
-                local hunting = ghost:GetAttribute("Hunting")
-                if hunting == true and not huntActive then
-                    onHuntStart()
-                elseif hunting ~= true and huntActive then
-                    onHuntEnd()
-                end
-            end
-        end))
-        notify("🛡 Hunt auto-hide armed", C.Green, 3)
-    end)
-
-    -- Manual hide button
-    local hideBtn = Instance.new("Frame")
-    hideBtn.Size = UDim2.new(1, 0, 0, 36)
-    hideBtn.BackgroundColor3 = C.Blue
-    hideBtn.BackgroundTransparency = 0.82
-    hideBtn.BorderSizePixel = 0
-    hideBtn.LayoutOrder = 6
-    hideBtn.Parent = survPage
-    corner(hideBtn, UDim.new(0, 8))
-    stroke(hideBtn, C.Blue, 1, 0.5)
-
-    local hideLbl = Instance.new("TextLabel")
-    hideLbl.Size = UDim2.new(1, 0, 1, 0)
-    hideLbl.BackgroundTransparency = 1
-    hideLbl.Text = "🚪 Manual Hide Now"
-    hideLbl.TextColor3 = C.Blue
-    hideLbl.Font = C.FontMed
-    hideLbl.TextSize = 12
-    hideLbl.Parent = hideBtn
-
-    local hideClick = Instance.new("TextButton")
-    hideClick.Size = UDim2.new(1, 0, 1, 0)
-    hideClick.BackgroundTransparency = 1
-    hideClick.Text = ""
-    hideClick.Parent = hideBtn
-    hideClick.MouseButton1Click:Connect(function()
-        local ok = safeTPToHidingSpot()
-        if not ok then notify("⚠ No closet found nearby!", C.Yellow, 4) end
-    end)
-
-    hideBtn.MouseEnter:Connect(function() tw(hideBtn, {BackgroundTransparency = 0.55}, C.SpeedFast) end)
-    hideBtn.MouseLeave:Connect(function() tw(hideBtn, {BackgroundTransparency = 0.82}, C.SpeedFast) end)
-
-    -- ═══════════════════════════════════════
-    --   PAGE: VISUAL
-    -- ═══════════════════════════════════════
-    local visPage = makePage("Visual")
-
-    makeToggle(visPage, "No Blur", "Disable all blur effects", 1, function(on)
-        rmConn("noblur_l") rmConn("noblur_c")
-        if on then
-            for _, e in pairs(Lighting:GetChildren()) do
-                if e:IsA("BlurEffect") and e.Name ~= "HubBlur" then e.Enabled = false end
-            end
-            for _, e in pairs(Camera:GetChildren()) do
-                if e:IsA("BlurEffect") then e.Enabled = false end
-            end
-            addConn("noblur_l", Lighting.ChildAdded:Connect(function(ch)
-                if ch:IsA("BlurEffect") and ch.Name ~= "HubBlur" and S.Features["No Blur"] then ch.Enabled = false end
-            end))
-            addConn("noblur_c", Camera.ChildAdded:Connect(function(ch)
-                if ch:IsA("BlurEffect") and S.Features["No Blur"] then ch.Enabled = false end
-            end))
-        else
-            for _, e in pairs(Lighting:GetChildren()) do
-                if e:IsA("BlurEffect") and e.Name ~= "HubBlur" then e.Enabled = true end
-            end
-            for _, e in pairs(Camera:GetChildren()) do
-                if e:IsA("BlurEffect") then e.Enabled = true end
-            end
-        end
-    end)
-
-    makeToggle(visPage, "No Fog", "Remove all fog effects", 2, function(on)
+    makeToggle(visPage, "No Fog", "Remove all fog", 3, function(on)
         if on then
             S._origFog = {FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart}
             Lighting.FogEnd = 1e6; Lighting.FogStart = 1e6
@@ -3189,190 +2423,129 @@ local function buildHub()
         end
     end)
 
-    makeToggle(visPage, "No Weather", "Disable clouds & atmosphere", 3, function(on)
+    makeToggle(visPage, "No Effects", "Disable screen effects/visuals", 4, function(on)
+        rmConn("noeff")
         if on then
-            local t = Workspace:FindFirstChildOfClass("Terrain")
-            if t then for _, ch in pairs(t:GetChildren()) do if ch:IsA("Clouds") then ch.Enabled = false end end end
-            for _, e in pairs(Lighting:GetChildren()) do if e:IsA("Atmosphere") then e.Density = 0 end end
-        else
-            local t = Workspace:FindFirstChildOfClass("Terrain")
-            if t then for _, ch in pairs(t:GetChildren()) do if ch:IsA("Clouds") then ch.Enabled = true end end end
+            addConn("noeff", RunService.Heartbeat:Connect(function()
+                if not S.Features["No Effects"] then return end
+                for _, v in pairs(Camera:GetDescendants()) do
+                    if v:IsA("PostEffect") or v:IsA("BlurEffect") then
+                        v.Enabled = false
+                    end
+                end
+            end))
         end
     end)
 
-    makeToggle(visPage, "No Shake", "Stabilize camera shake", 4, function(on)
-        notify(on and "📷 Shake dampening active" or "📷 Shake dampening off", C.Green, 2)
-    end)
-
+    --   PAGE: MISC
     -- ═══════════════════════════════════════
-    --   PAGE: TOOLS
-    -- ═══════════════════════════════════════
-    local toolsPage = makePage("Tools")
+    local miscPage = makePage("Misc")
 
-    makeToggle(toolsPage, "Speed Boost", "Walk 50% faster", 1, function(on)
-        rmConn("speed")
-        if not on then
-            local c = LocalPlayer.Character
-            if c then local h = c:FindFirstChildOfClass("Humanoid") if h then h.WalkSpeed = 16 end end
-            return
-        end
-        addConn("speed", RunService.Heartbeat:Connect(function()
-            if not S.Features["Speed Boost"] then return end
-            local c = LocalPlayer.Character
-            if c then local h = c:FindFirstChildOfClass("Humanoid") if h then h.WalkSpeed = 24 end end
+    makeToggle(miscPage, "Anti-AFK", "Prevent being kicked for AFK", 1, function(on)
+        rmConn("antiafk")
+        if not on then return end
+        addConn("antiafk", RunService.Heartbeat:Connect(function()
+            if not S.Features["Anti-AFK"] then return end
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum:Move(Vector3.new(0, 0, 0), false)
+                end
+            end
         end))
     end)
 
-    makeToggle(toolsPage, "No-Clip", "Walk through walls", 2, function(on)
-        rmConn("noclip")
-        if not on then return end
-        addConn("noclip", RunService.Stepped:Connect(function()
-            if not S.Features["No-Clip"] then return end
-            local c = LocalPlayer.Character
-            if c then for _, p in pairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
-        end))
-    end)
+    -- Server Info display
+    local serverInfoFrame = Instance.new("Frame")
+    serverInfoFrame.Size = UDim2.new(1, 0, 0, 100)
+    serverInfoFrame.BackgroundColor3 = C.Bg3
+    serverInfoFrame.BackgroundTransparency = 0.25
+    serverInfoFrame.BorderSizePixel = 0
+    serverInfoFrame.LayoutOrder = 5
+    serverInfoFrame.Parent = miscPage
+    corner(serverInfoFrame, UDim.new(0, 8))
 
-    -- TP to Exit (fixed: multi-keyword + ExitDoor model)
-    makeToggle(toolsPage, "TP to Exit", "Teleport to exit (fixed)", 3, function(on)
-        if not on then return end
-        local char = LocalPlayer.Character
-        if not char then notify("⚠ No character", C.Red, 3) return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then notify("⚠ No HumanoidRootPart", C.Red, 3) return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
+    local serverInfoTitle = Instance.new("TextLabel")
+    serverInfoTitle.Size = UDim2.new(1, -16, 0, 16)
+    serverInfoTitle.Position = UDim2.new(0, 10, 0, 6)
+    serverInfoTitle.BackgroundTransparency = 1
+    serverInfoTitle.Text = "SERVER INFO"
+    serverInfoTitle.TextColor3 = C.AccentDim
+    serverInfoTitle.Font = C.Font
+    serverInfoTitle.TextSize = 9
+    serverInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+    serverInfoTitle.Parent = serverInfoFrame
 
-        local exitKeywords = {"exit", "escape", "leave", "maindoor", "outdoor"}
-        local bestPart, bestScore = nil, -1
+    local siGrid = Instance.new("UIGridLayout")
+    siGrid.CellSize = UDim2.new(0.5, -6, 0, 22)
+    siGrid.CellPadding = UDim2.new(0, 6, 0, 4)
+    siGrid.SortOrder = Enum.SortOrder.LayoutOrder
+    siGrid.Parent = serverInfoFrame
 
-        local df = Workspace:FindFirstChild("Doors")
-        if df then
-            -- check ExitDoor first
-            local exitDoor = df:FindFirstChild("ExitDoor")
-            if exitDoor then
-                local p = exitDoor:FindFirstChildWhichIsA("BasePart", true)
-                if p then bestPart = p bestScore = 100 end
-            end
-            if not bestPart then
-                for _, dm in pairs(df:GetChildren()) do
-                    if dm:IsA("Model") then
-                        local nm = dm.Name:lower()
-                        local score = 0
-                        for i, kw in ipairs(exitKeywords) do
-                            if nm:find(kw) then score = (#exitKeywords - i + 1) * 10 break end
-                        end
-                        if score > bestScore then
-                            local p = dm:FindFirstChildWhichIsA("BasePart", true)
-                            if p then bestPart = p bestScore = score end
-                        end
-                    end
-                end
-            end
-        end
+    local function makeSIStat(parent, text, order)
+        local f = Instance.new("Frame")
+        f.Size = UDim2.new(1, 0, 1, 0)
+        f.BackgroundColor3 = C.Bg4
+        f.BackgroundTransparency = 0.2
+        f.BorderSizePixel = 0
+        f.LayoutOrder = order
+        f.Parent = parent
+        corner(f, UDim.new(0, 4))
+        local l = Instance.new("TextLabel")
+        l.Size = UDim2.new(1, -10, 1, 0)
+        l.Position = UDim2.new(0, 6, 0, 0)
+        l.BackgroundTransparency = 1
+        l.Text = text
+        l.TextColor3 = C.Text2
+        l.Font = C.FontReg
+        l.TextSize = 10
+        l.TextXAlignment = Enum.TextXAlignment.Left
+        l.Parent = f
+        return l
+    end
 
-        -- fallback to workspace scan
-        if not bestPart then
-            for _, d in pairs(Workspace:GetDescendants()) do
-                if d:IsA("BasePart") then
-                    local nm = d.Name:lower()
-                    for _, kw in ipairs(exitKeywords) do
-                        if nm:find(kw) then bestPart = d break end
-                    end
-                    if bestPart then break end
-                end
-            end
-        end
+    local siPlayers = makeSIStat(serverInfoFrame, "Players: 0", 1)
+    local siPing = makeSIStat(serverInfoFrame, "Ping: 0ms", 2)
+    local siPlaceId = makeSIStat(serverInfoFrame, "Place: -", 3)
+    local siUptime = makeSIStat(serverInfoFrame, "Uptime: 0s", 4)
 
-        if bestPart then
-            if hum then hum:ChangeState(Enum.HumanoidStateType.Running) end
-            hrp.CFrame = CFrame.new(bestPart.Position + Vector3.new(0, 4, 5))
-            task.wait(0.05)
-            if hum then hum:ChangeState(Enum.HumanoidStateType.Running) end
-            notify("🚪 Teleported to exit: " .. (bestPart.Parent and bestPart.Parent.Name or "Exit"), C.Green, 3)
-        else
-            notify("⚠ Exit door not found", C.Yellow, 4)
-        end
+    addConn("si_update", RunService.Heartbeat:Connect(function()
+        siPlayers.Text = "Players: " .. #Players:GetPlayers()
+        siPing.Text = "Ping: " .. math.floor(LocalPlayer:GetNetworkPing() * 1000) .. "ms"
+        siPlaceId.Text = "Place: " .. (game.PlaceId or "-")
+        local up = math.floor(os.clock())
+        siUptime.Text = "Uptime: " .. up .. "s"
+    end))
 
-        task.wait(0.3)
-        S.Features["TP to Exit"] = false
-        updateCount()
-    end)
+    -- Rejoin button
+    local rejoinBtn = Instance.new("Frame")
+    rejoinBtn.Size = UDim2.new(1, 0, 0, 36)
+    rejoinBtn.BackgroundColor3 = C.Blue
+    rejoinBtn.BackgroundTransparency = 0.82
+    rejoinBtn.BorderSizePixel = 0
+    rejoinBtn.LayoutOrder = 6
+    rejoinBtn.Parent = miscPage
+    corner(rejoinBtn, UDim.new(0, 8))
+    stroke(rejoinBtn, C.Blue, 1, 0.5)
 
-    -- Remote Logger
-    makeToggle(toolsPage, "Remote Logger", "Log all remote traffic", 4, function(on)
-        rmConn("rlog")
-        if S._logFrame then
-            tw(S._logFrame, {Position = UDim2.new(1, 10, 0.5, -130)}, 0.3)
-            task.wait(0.35)
-            if S._logFrame then S._logFrame.Visible = false S._logFrame:Destroy() S._logFrame = nil end
-        end
-        if not on then return end
+    local rejoinLbl = Instance.new("TextLabel")
+    rejoinLbl.Size = UDim2.new(1, 0, 1, 0)
+    rejoinLbl.BackgroundTransparency = 1
+    rejoinLbl.Text = "🔄 Rejoin Server"
+    rejoinLbl.TextColor3 = C.Blue
+    rejoinLbl.Font = C.FontMed
+    rejoinLbl.TextSize = 12
+    rejoinLbl.Parent = rejoinBtn
 
-        local lf = Instance.new("Frame")
-        lf.Name = "RemoteLog"
-        lf.Size = UDim2.new(0, 250, 0, 260)
-        lf.Position = UDim2.new(1, 10, 0.5, -130)
-        lf.BackgroundColor3 = C.Bg1; lf.BackgroundTransparency = 0.12
-        lf.BorderSizePixel = 0; lf.Parent = Hub
-        corner(lf, UDim.new(0, 8)); stroke(lf, C.AccentDim, 1, 0.5)
-        S._logFrame = lf
-
-        local lt = Instance.new("TextLabel")
-        lt.Size = UDim2.new(1, 0, 0, 24)
-        lt.BackgroundColor3 = C.Bg2; lt.BackgroundTransparency = 0.2
-        lt.BorderSizePixel = 0; lt.Text = "  📡 Remote Logger"
-        lt.TextColor3 = C.AccentBright; lt.Font = C.Font; lt.TextSize = 10
-        lt.TextXAlignment = Enum.TextXAlignment.Left; lt.Parent = lf
-        corner(lt, UDim.new(0, 8))
-
-        local ls = Instance.new("ScrollingFrame")
-        ls.Size = UDim2.new(1, -6, 1, -30)
-        ls.Position = UDim2.new(0, 3, 0, 27)
-        ls.BackgroundTransparency = 1; ls.BorderSizePixel = 0
-        ls.ScrollBarThickness = 2; ls.ScrollBarImageColor3 = C.AccentDim
-        ls.AutomaticCanvasSize = Enum.AutomaticSize.Y; ls.CanvasSize = UDim2.new(0, 0, 0, 0)
-        ls.Parent = lf
-        local ll = Instance.new("UIListLayout")
-        ll.Padding = UDim.new(0, 2); ll.SortOrder = Enum.SortOrder.LayoutOrder; ll.Parent = ls
-
-        tw(lf, {Position = UDim2.new(1, -260, 0.5, -130)}, 0.4)
-
-        local idx = 0
-        local hooked = {}
-        for _, r in pairs(game:GetDescendants()) do
-            if r:IsA("RemoteEvent") and not hooked[r] then
-                hooked[r] = true
-                pcall(function()
-                    r.OnClientEvent:Connect(function(...)
-                        if not S.Features["Remote Logger"] then return end
-                        idx += 1
-                        if idx > 80 then
-                            local first = ls:FindFirstChildWhichIsA("TextLabel")
-                            if first then first:Destroy() end
-                        end
-                        local args = {...}
-                        local argStr = ""
-                        for i, v in ipairs(args) do
-                            argStr ..= tostring(v)
-                            if i < #args then argStr ..= ", " end
-                        end
-                        if #argStr > 50 then argStr = argStr:sub(1, 50) .. "…" end
-                        local e = Instance.new("TextLabel")
-                        e.Size = UDim2.new(1, 0, 0, 26)
-                        e.BackgroundColor3 = C.Bg3; e.BackgroundTransparency = 0.45
-                        e.BorderSizePixel = 0
-                        e.Text = " ← " .. r.Name .. "\n " .. argStr
-                        e.TextColor3 = C.Blue; e.Font = C.FontReg; e.TextSize = 9
-                        e.TextXAlignment = Enum.TextXAlignment.Left
-                        e.TextYAlignment = Enum.TextYAlignment.Top
-                        e.LayoutOrder = idx; e.Parent = ls
-                        corner(e, UDim.new(0, 3))
-                        ls.CanvasPosition = Vector2.new(0, ls.AbsoluteCanvasSize.Y)
-                    end)
-                end)
-            end
-        end
-        notify("📡 Logging remotes", C.Accent, 3)
+    local rejoinClick = Instance.new("TextButton")
+    rejoinClick.Size = UDim2.new(1, 0, 1, 0)
+    rejoinClick.BackgroundTransparency = 1
+    rejoinClick.Text = ""
+    rejoinClick.Parent = rejoinBtn
+    rejoinClick.MouseButton1Click:Connect(function()
+        local ts = game:GetService("TeleportService")
+        ts:Teleport(game.PlaceId, LocalPlayer)
     end)
 
     -- ═══════════════════════════════════════
@@ -3574,7 +2747,6 @@ local function buildHub()
                 tw(d.label, {TextColor3 = C.Text2}, C.Speed)
             end
         end
-        if name == "Abilities" and updateAbilityPanel then updateAbilityPanel() end
     end
 
     for name, d in pairs(sideBtns) do
@@ -3582,100 +2754,7 @@ local function buildHub()
     end
     switchCat("Home")
 
-    -- ═══════════════════════════════════════
-    --   UPDATE FUNCTIONS
-    -- ═══════════════════════════════════════
-    function updateGhostPanel()
-        if not S._ghostPanel then return end
-        for _, ch in pairs(S._ghostPanel:GetChildren()) do
-            if ch:IsA("Frame") then ch:Destroy() end
-        end
-
-        local possible = getPossibleGhosts()
-        for i, ghost in ipairs(possible) do
-            if i > 25 then break end
-            local gf = Instance.new("Frame")
-            gf.Size = UDim2.new(1, 0, 0, 40)
-            gf.BackgroundColor3 = C.Bg3; gf.BackgroundTransparency = 0.35
-            gf.BorderSizePixel = 0; gf.LayoutOrder = i; gf.Parent = S._ghostPanel
-            corner(gf, UDim.new(0, 6))
-
-            if i == 1 and ghost.confidence > 0 then
-                stroke(gf, C.Green, 1, 0.4)
-            end
-
-            local gName = Instance.new("TextLabel")
-            gName.Size = UDim2.new(0.5, 0, 0, 16)
-            gName.Position = UDim2.new(0, 10, 0, 4)
-            gName.BackgroundTransparency = 1
-            gName.Text = ghost.name
-            gName.TextColor3 = (i == 1 and ghost.confidence > 0) and C.Green or C.Text1
-            gName.Font = C.FontMed; gName.TextSize = 12
-            gName.TextXAlignment = Enum.TextXAlignment.Left; gName.Parent = gf
-
-            local confBg = Instance.new("Frame")
-            confBg.Size = UDim2.new(0, 60, 0, 6)
-            confBg.Position = UDim2.new(1, -76, 0, 8)
-            confBg.BackgroundColor3 = C.Bg4; confBg.BorderSizePixel = 0; confBg.Parent = gf
-            corner(confBg, UDim.new(1, 0))
-
-            local confFill = Instance.new("Frame")
-            confFill.Size = UDim2.new(ghost.confidence / 100, 0, 1, 0)
-            confFill.BackgroundColor3 = ghost.confidence >= 66 and C.Green or ghost.confidence >= 33 and C.Yellow or C.Text3
-            confFill.BorderSizePixel = 0; confFill.Parent = confBg
-            corner(confFill, UDim.new(1, 0))
-
-            local confTxt = Instance.new("TextLabel")
-            confTxt.Size = UDim2.new(0, 20, 0, 12)
-            confTxt.Position = UDim2.new(1, -20, 0, 5)
-            confTxt.BackgroundTransparency = 1
-            confTxt.Text = ghost.confidence .. "%"
-            confTxt.TextColor3 = C.Text3; confTxt.Font = C.FontReg; confTxt.TextSize = 9
-            confTxt.Parent = gf
-
-            local tagParts = {}
-            for _, ev in ipairs(ghost.evidence) do
-                local found = S.Evidence[ev]
-                for _, evInfo in ipairs(EvidenceTypes) do
-                    if evInfo.id == ev then
-                        local marker = found and "✓" or "○"
-                        table.insert(tagParts, marker .. evInfo.icon)
-                        break
-                    end
-                end
-            end
-            local evidTags = Instance.new("TextLabel")
-            evidTags.Size = UDim2.new(1, -16, 0, 12)
-            evidTags.Position = UDim2.new(0, 10, 0, 23)
-            evidTags.BackgroundTransparency = 1
-            evidTags.Text = table.concat(tagParts, "  ")
-            evidTags.TextColor3 = C.Text3; evidTags.Font = C.FontReg; evidTags.TextSize = 9
-            evidTags.TextXAlignment = Enum.TextXAlignment.Left; evidTags.Parent = gf
-        end
-    end
-
-    function updateEvidencePanel()
-        if not S._evidPanel then return end
-        for id, data in pairs(S._evidPanel) do
-            local found = S.Evidence[id]
-            for _, ev in ipairs(EvidenceTypes) do
-                if ev.id == id then
-                    if found then
-                        tw(data.frame, {BackgroundColor3 = ev.color, BackgroundTransparency = 0.4}, C.SpeedFast)
-                        data.label.TextColor3 = C.Text1
-                    else
-                        tw(data.frame, {BackgroundColor3 = C.Bg4, BackgroundTransparency = 0.25}, C.SpeedFast)
-                        data.label.TextColor3 = C.Text3
-                    end
-                    break
-                end
-            end
-        end
-    end
-
-    updateGhostPanel()
-    updateEvidencePanel()
-    updateHUD()
+    updateMatchHUD()
 
     -- ═══════════════════════════════════════
     --   WINDOW CONTROLS
@@ -3686,7 +2765,7 @@ local function buildHub()
         pcall(function() Lighting:FindFirstChild("HubNV"):Destroy() end)
         if S._origLight then for k, v in pairs(S._origLight) do pcall(function() Lighting[k] = v end) end end
         if S._origFog then pcall(function() Lighting.FogEnd = S._origFog.FogEnd; Lighting.FogStart = S._origFog.FogStart end) end
-        pcall(function() if EvidHudGui then EvidHudGui:Destroy() end end)
+        pcall(function() if MatchHudGui then MatchHudGui:Destroy() end end)
             tw(MainFrame, {Size = UDim2.new(0, windowW, 0, 0), BackgroundTransparency = 1}, 0.3)
         task.wait(0.35)
         Hub:Destroy()
@@ -3731,7 +2810,7 @@ local function buildHub()
     tw(uiScale, {Scale = isPhone and 0.92 or 1}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
     task.wait(0.6)
-    notify("🕯 Demonology Hub v5.0 loaded", C.Accent, 4)
+    notify("🗡️ Samurai DUELS Hub v1.0 loaded", C.Accent, 4)
     notify("made by 1nxs on discord", C.Text3, 5)
     notify("RightShift to toggle", C.Text3, 4)
 end
@@ -3739,7 +2818,8 @@ end
 -- LAUNCH
 showLoadingScreen(function()
     local ok, err = pcall(function()
-        buildEvidHUD()
+        buildMatchHUD()
+        hookGameEvents()
         buildHub()
     end)
     if not ok then
@@ -3748,6 +2828,6 @@ showLoadingScreen(function()
     end
 end)
 
-print("[1nxs Hub] ✅ v5.0 Loaded — fixed ghost limit, EMF, Spirit Box, Laser")
+print("[1nxs Hub] ✅ Samurai DUELS Hub v1.0 Loaded")
 
 
