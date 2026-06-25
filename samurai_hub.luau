@@ -5,6 +5,32 @@
 --]]
 
 -- ═══════════════════════════════════════
+--   SERVICES
+-- ═══════════════════════════════════════
+local Players          = game:GetService("Players")
+local RunService       = game:GetService("RunService")
+local TweenService     = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local Lighting         = game:GetService("Lighting")
+local Workspace        = game:GetService("Workspace")
+local CoreGui          = game:GetService("CoreGui")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService      = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera      = Workspace.CurrentCamera
+local Events      = ReplicatedStorage:FindFirstChild("Events")
+
+pcall(function()
+    for _, n in ipairs({"1nxsHub","1nxsLoader","1nxsMatchHUD","1nxsEvidHUD"}) do
+        local o = CoreGui:FindFirstChild(n)
+        if o then o:Destroy() end
+    end
+    local b = Lighting:FindFirstChild("HubBlur")
+    if b then b:Destroy() end
+end)
+
+-- ═══════════════════════════════════════
 --   KEY SYSTEM (anti-theft: server-free, algorithmic validation)
 -- ═══════════════════════════════════════
 
@@ -248,32 +274,6 @@ if needsKey() then
     end
 end
 _G["1NXS_AUTHENTICATED"] = true
-
--- ═══════════════════════════════════════
---   SERVICES
--- ═══════════════════════════════════════
-local Players          = game:GetService("Players")
-local RunService       = game:GetService("RunService")
-local TweenService     = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Lighting         = game:GetService("Lighting")
-local Workspace        = game:GetService("Workspace")
-local CoreGui          = game:GetService("CoreGui")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local HttpService      = game:GetService("HttpService")
-
-local LocalPlayer = Players.LocalPlayer
-local Camera      = Workspace.CurrentCamera
-local Events      = ReplicatedStorage:FindFirstChild("Events")
-
-    pcall(function()
-        for _, n in ipairs({"1nxsHub","1nxsLoader","1nxsMatchHUD","1nxsEvidHUD"}) do
-            local o = CoreGui:FindFirstChild(n)
-            if o then o:Destroy() end
-        end
-        local b = Lighting:FindFirstChild("HubBlur")
-        if b then b:Destroy() end
-    end)
 
 local C = {
     Key             = Enum.KeyCode.RightShift,
@@ -2816,18 +2816,24 @@ local function buildHub()
 end
 
 -- LAUNCH
-showLoadingScreen(function()
-    local ok, err = pcall(function()
-        buildMatchHUD()
-        hookGameEvents()
-        buildHub()
+local ok, err = pcall(function()
+    showLoadingScreen(function()
+        local ok2, err2 = pcall(function()
+            buildMatchHUD()
+            hookGameEvents()
+            buildHub()
+        end)
+        if not ok2 then
+            warn("[Hub] Build failed:", err2)
+            print("[Hub] BUILD FAILED:", err2)
+        end
     end)
-    if not ok then
-        warn("[Hub] Build failed:", err)
-        print("[Hub] BUILD FAILED:", err)
-    end
 end)
-
-print("[1nxs Hub] ✅ Samurai Hub v1.0 Loaded")
+if not ok then
+    warn("[Hub] Fatal error:", err)
+    print("[Hub] FATAL ERROR:", err)
+else
+    print("[1nxs Hub] ✅ Samurai Hub v1.0 Loaded")
+end
 
 
