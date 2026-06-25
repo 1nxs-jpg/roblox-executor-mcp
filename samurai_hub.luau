@@ -66,6 +66,40 @@ local function isValidKey(key)
     return expected == parts[4]
 end
 
+-- Key persistence: save/load key with 24h expiry
+local KEY_FILE = "1nxs_hub_key.dat"
+local function loadSavedKey()
+    local ok, saved = pcall(function()
+        if not isfile then return nil end
+        if not isfile(KEY_FILE) then return nil end
+        local data = readfile(KEY_FILE)
+        local parsed = game:GetService("HttpService"):JSONDecode(data)
+        if type(parsed) ~= "table" or type(parsed.key) ~= "string" or type(parsed.expiry) ~= "number" then
+            return nil
+        end
+        if type(parsed.userId) ~= "number" or parsed.userId ~= LocalPlayer.UserId then
+            return nil
+        end
+        if tick() >= parsed.expiry then
+            delfile(KEY_FILE)
+            return nil
+        end
+        return parsed.key
+    end)
+    if not ok then return nil end
+    return saved
+end
+
+local function needsKey()
+    if _G["1NXS_AUTHENTICATED"] then return false end
+    local saved = loadSavedKey()
+    if saved and isValidKey(saved) then
+        _G["1NXS_AUTHENTICATED"] = true
+        return false
+    end
+    return true
+end
+
 local function showKeySystem()
     local player = game:GetService("Players").LocalPlayer
     if not player then
@@ -232,40 +266,6 @@ local function showKeySystem()
     return keyValid
 end
 
--- Key persistence: save/load key with 24h expiry
-local KEY_FILE = "1nxs_hub_key.dat"
-local function loadSavedKey()
-    local ok, saved = pcall(function()
-        if not isfile then return nil end
-        if not isfile(KEY_FILE) then return nil end
-        local data = readfile(KEY_FILE)
-        local parsed = game:GetService("HttpService"):JSONDecode(data)
-        if type(parsed) ~= "table" or type(parsed.key) ~= "string" or type(parsed.expiry) ~= "number" then
-            return nil
-        end
-        if type(parsed.userId) ~= "number" or parsed.userId ~= LocalPlayer.UserId then
-            return nil
-        end
-        if tick() >= parsed.expiry then
-            delfile(KEY_FILE)
-            return nil
-        end
-        return parsed.key
-    end)
-    if not ok then return nil end
-    return saved
-end
-
--- Run key system (skip if already authed this session or saved key valid)
-local function needsKey()
-    if _G["1NXS_AUTHENTICATED"] then return false end
-    local saved = loadSavedKey()
-    if saved and isValidKey(saved) then
-        _G["1NXS_AUTHENTICATED"] = true
-        return false
-    end
-    return true
-end
 if needsKey() then
     local success = pcall(showKeySystem)
     if not success then
