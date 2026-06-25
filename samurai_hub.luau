@@ -1794,12 +1794,16 @@ local function buildHub()
         end))
     end)
 
-    makeToggle(combatPage, "Infinite Jump", "Jump in air (multi-jump)", 5, function(on)
+    makeToggle(combatPage, "Infinite Jump", "Jump in air (multi-jump) — 0.5s cooldown", 5, function(on)
         rmConn("infjump")
         if not on then return end
         local UIS = UserInputService
+        local lastJump = 0
         addConn("infjump", UIS.JumpRequest:Connect(function()
             if not S.Features["Infinite Jump"] then return end
+            local now = tick()
+            if now - lastJump < 0.5 then return end
+            lastJump = now
             local char = LocalPlayer.Character
             if not char then return end
             local hum = char:FindFirstChildOfClass("Humanoid")
