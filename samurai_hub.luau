@@ -305,46 +305,66 @@ local C = {
 }
 
 local Rarities = {
-    Common      = Color3.fromRGB(180, 180, 180),
-    Uncommon    = Color3.fromRGB(86, 155, 245),
-    Rare        = Color3.fromRGB(182, 122, 248),
-    Epic        = Color3.fromRGB(248, 146, 60),
-    Legendary   = Color3.fromRGB(245, 200, 20),
-    Mythical    = Color3.fromRGB(255, 60, 130),
+    Rare        = Color3.fromRGB(0, 112, 255),
+    Epic        = Color3.fromRGB(163, 53, 238),
+    Legendary   = Color3.fromRGB(255, 165, 0),
+    Mystery     = Color3.fromRGB(30, 215, 215),
+    Special     = Color3.fromRGB(255, 50, 50),
 }
 
 local SwordDB = {
-    {name="Katana",         rarity="Common",    desc="Standard katana",              damage=25, speed=0.8},
-    {name="Nodachi",        rarity="Uncommon",  desc="Longer reach, slower swings",  damage=35, speed=1.0},
-    {name="Wakizashi",      rarity="Uncommon",  desc="Short blade, fast swings",     damage=20, speed=0.6},
-    {name="Tanto",          rarity="Rare",      desc="Dagger-like, high speed",      damage=18, speed=0.5},
-    {name="Yumi",           rarity="Rare",      desc="Balanced longbow",             damage=30, speed=0.9},
-    {name="Orochi",         rarity="Epic",      desc="Serpent blade, poison edge",   damage=40, speed=0.85},
-    {name="Shadowfang",     rarity="Epic",      desc="Dark blade, life steal",       damage=38, speed=0.75},
-    {name="Dragonbone",     rarity="Legendary", desc="Ancient dragon bone",          damage=55, speed=0.9},
-    {name="Stormcaller",    rarity="Legendary", desc="Charged with lightning",       damage=50, speed=0.7},
-    {name="Voidrend",       rarity="Mythical",  desc="Reality-tearing blade",        damage=70, speed=0.8},
-    {name="Celestial",      rarity="Mythical",  desc="Star-forged katana",           damage=65, speed=0.65},
-    {name="Soulreaver",     rarity="Mythical",  desc="Devours enemy souls",          damage=75, speed=0.75},
+    {name="Katana",          rarity="Rare",      desc="Simple and sharp"},
+    {name="Glacial Katana",  rarity="Rare",      desc="Ice cold"},
+    {name="Ninja Katana",    rarity="Rare",      desc="Silent and deadly"},
+    {name="Bombastic Katana",rarity="Rare",      desc="Zero chill"},
+    {name="Moon Katana",     rarity="Rare",      desc="Forged in moonlight"},
+    {name="Neon Katana",     rarity="Rare",      desc="Glows in the dark"},
+    {name="Toxicity",        rarity="Rare",      desc="Hazardous material"},
+    {name="Chromatic Edge",  rarity="Epic",      desc="Every color. No favorite."},
+    {name="Inferno Katana",  rarity="Epic",      desc="Extremely hot. Handle carefully."},
+    {name="Laser Sword",     rarity="Epic",      desc="Totally not from space."},
+    {name="Tempest",         rarity="Epic",      desc="Brings the storm."},
+    {name="Cursed Blade",    rarity="Legendary", desc="The curse is included."},
+    {name="Eclipse",         rarity="Legendary", desc="Blots out the sun."},
+    {name="Glitch",          rarity="Legendary", desc="Reality.exe stopped working."},
+    {name="Omega Katana",    rarity="Legendary", desc="The final blade."},
+    {name="Crescendo",       rarity="Mystery",   desc="Starts quiet. Ends loud."},
+    {name="Astral Blade",    rarity="Special",   desc="Beyond reality."},
+    {name="Void",            rarity="Special",   desc="The abyss fights back."},
+    {name="Demon Blade",     rarity="Special",   desc="Forged in hell."},
+    {name="Cyber Katana",    rarity="Special",   desc="404: mercy not found."},
+    {name="Ghost Blade",     rarity="Special",   desc="Cold to the touch. Colder in death."},
+    {name="KryptoniteSword", rarity="Special",   desc="Weakens gods. Splits atoms."},
+    {name="ShadowFang",      rarity="Special",   desc="What it cuts, the dark reclaims."},
+    {name="STARRY",          rarity="Special",   desc="Twinkle Twinkle."},
+    {name="APOCALYPSE",      rarity="Special",   desc="Its so over."},
+    {name="Avenger",         rarity="Special",   desc="A sword fit for a hero"},
+    {name="Angel Blade",     rarity="Special",   desc="Mercy comes from above."},
+    {name="OBLIVION",        rarity="Special",   desc="Nothing remains."},
+    {name="Frostbite",       rarity="Special",   desc="The chill that bites back."},
+    {name="Spider Sword",    rarity="Special",   desc="Caught in the web."},
+    {name="Forsaken",        rarity="Special",   desc="Abandoned by all."},
+    {name="CELESTIAL BLADE", rarity="Special",   desc="Light of a thousand stars."},
+    {name="HELLFIRE",        rarity="Special",   desc="Straight from the inferno."},
 }
 
 local AbilityDataDB = {
-    {name="Skydive",        desc="Dive from above",        keysPrice=1500,  robuxPrice=499},
-    {name="Shadowstep",     desc="Teleport behind enemy",  keysPrice=2000,  robuxPrice=699},
-    {name="Whirlwind",      desc="AoE spin attack",        keysPrice=1200,  robuxPrice=399},
-    {name="SmokeBomb",      desc="Escape with smoke",      keysPrice=800,   robuxPrice=299},
-    {name="Adrenaline",     desc="Temporary speed boost",  keysPrice=1000,  robuxPrice=349},
-    {name="ShieldBreak",    desc="Breaks enemy shield",    keysPrice=2500,  robuxPrice=799},
-    {name="Blink",          desc="Short teleport dash",    keysPrice=1800,  robuxPrice=599},
+    {name="Rage",        desc="Speed boost",                 keysPrice=0},
+    {name="Skydive",     desc="Launch upward",              keysPrice=100},
+    {name="Invisible",   desc="Turn invisible",             keysPrice=500},
+    {name="Teleport",    desc="Short teleport",             keysPrice=850},
+    {name="DemonStep",   desc="Rapid teleports",            keysPrice=99,  robux=true},
+    {name="TrinitySlash",desc="Triple dash",                keysPrice=99,  robux=true},
+    {name="Berzerk",     desc="No cooldown + 3x charge",    keysPrice=1500},
 }
 
 local FinisherDataDB = {
-    {name="Shatter",        desc="Shatter opponent",       keysPrice=5000,  robuxPrice=999,  winsRequired=50},
-    {name="Decapitate",     desc="Clean decapitation",     keysPrice=8000,  robuxPrice=1499, winsRequired=100},
-    {name="Obliterate",     desc="Obliterate enemy",       keysPrice=12000, robuxPrice=1999, winsRequired=200},
-    {name="Vaporize",       desc="Vaporize target",        keysPrice=15000, robuxPrice=2499, winsRequired=350},
-    {name="Annihilate",     desc="Annihilate foe",         keysPrice=20000, robuxPrice=2999, winsRequired=500},
-    {name="Erase",          desc="Erase from existence",   keysPrice=30000, robuxPrice=3999, winsRequired=1000},
+    {name="Shatter",    desc="Crystal shatter",       type="Keys",   amount=300},
+    {name="Supernova",  desc="Golden detonation",     type="Keys",   amount=500},
+    {name="Singularity",desc="Violet phantom",        type="Keys",   amount=1000},
+    {name="Ripples",    desc="Shockwave",             type="Wins",   amount=50},
+    {name="Phantom",    desc="Ghost fade",            type="Robux",  amount=49},
+    {name="Implosion",  desc="Dark collapse",         type="Robux",  amount=79},
 }
 
 local S = {
@@ -1891,7 +1911,7 @@ local function buildHub()
             local plr = LocalPlayer
             local ability = plr:GetAttribute("Ability")
             if ability and ability ~= "" then
-                useAbility:FireServer(ability)
+                useAbility:FireServer("SpecialAbility")
                 lastUse = now
             end
         end))
@@ -2204,15 +2224,15 @@ local function buildHub()
         rarityLbl.TextXAlignment = Enum.TextXAlignment.Left
         rarityLbl.Parent = gf
 
-        local statsTxt = Instance.new("TextLabel")
-        statsTxt.Size = UDim2.new(0.3, 0, 0, 14)
-        statsTxt.Position = UDim2.new(0.4, 0, 0.5, -7)
-        statsTxt.BackgroundTransparency = 1
-        statsTxt.Text = "Dmg:" .. sword.damage .. " Spd:" .. sword.speed
-        statsTxt.TextColor3 = C.Text2
-        statsTxt.Font = C.FontReg
-        statsTxt.TextSize = 8
-        statsTxt.Parent = gf
+        local rarityLbl2 = Instance.new("TextLabel")
+        rarityLbl2.Size = UDim2.new(0.3, 0, 0, 14)
+        rarityLbl2.Position = UDim2.new(0.35, 0, 0.5, -7)
+        rarityLbl2.BackgroundTransparency = 1
+        rarityLbl2.Text = sword.rarity:upper()
+        rarityLbl2.TextColor3 = rarityCol
+        rarityLbl2.Font = C.FontReg
+        rarityLbl2.TextSize = 8
+        rarityLbl2.Parent = gf
 
         local equipBtn = Instance.new("TextButton")
         equipBtn.Size = UDim2.new(0, 60, 0, 24)
@@ -2287,8 +2307,8 @@ local function buildHub()
         priceTxt.Size = UDim2.new(0.2, 0, 0, 14)
         priceTxt.Position = UDim2.new(0.55, 0, 0.5, -7)
         priceTxt.BackgroundTransparency = 1
-        priceTxt.Text = abil.keysPrice .. "K"
-        priceTxt.TextColor3 = C.Yellow
+        priceTxt.Text = abil.robux and tostring(abil.keysPrice) .. " R$" or (abil.keysPrice == 0 and "Free" or tostring(abil.keysPrice) .. " Keys")
+        priceTxt.TextColor3 = abil.robux and C.Green or C.Yellow
         priceTxt.Font = C.FontReg
         priceTxt.TextSize = 8
         priceTxt.Parent = gf
@@ -2309,8 +2329,8 @@ local function buildHub()
         local abilShopEvent = remotes and remotes:FindFirstChild("AbilityShopEvent")
         selectBtn.MouseButton1Click:Connect(function()
             if abilShopEvent then
-                abilShopEvent:FireServer(abil.name, false)
-                notify("⚡ Selected " .. abil.name, C.Purple, 3)
+                abilShopEvent:FireServer(abil.name, true, true)
+                notify("⚡ Equipped " .. abil.name, C.Purple, 3)
             end
         end)
     end
