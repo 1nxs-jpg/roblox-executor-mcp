@@ -1701,47 +1701,36 @@ local function buildHub()
     end)
 
     makeToggle(combatPage, "Mechanic", "Remove cooldown by unequipping/equipping sword after dash", 9, function(on)
-        if on then
-            local ok, mt = pcall(getrawmetatable, game)
-            if not ok or not mt then
-                notify("Mechanic not supported by executor", C.Red, 4)
-                return
-            end
-            local oldNamecall = mt.__namecall
-            mt.__namecall = function(self, ...)
-                local method = getnamecallmethod()
-                if method == "FireServer" and typeof(self) == "Instance" and self.Name == "DashEvent" then
-                    local result = oldNamecall(self, ...)
-                    task.spawn(function()
-                        local char = LocalPlayer.Character
-                        if not char then return end
-                        local hum = char:FindFirstChildOfClass("Humanoid")
-                        if not hum then return end
-                        local tool = char:FindFirstChildOfClass("Tool")
-                        if not tool then return end
-                        local swordName = tool.Name
-                        hum:UnequipTools()
-                        local eqRemote = remotes and remotes:FindFirstChild("EquipEvent")
-                        if eqRemote then
-                            eqRemote:FireServer("WeaponEquip", swordName)
-                        end
-                    end)
-                    return result
-                end
-                return oldNamecall(self, ...)
-            end
-            S._mechanicOld = oldNamecall
-            notify("Mechanic activated", C.Accent, 3)
-        else
-            if S._mechanicOld then
-                local ok, mt = pcall(getrawmetatable, game)
-                if ok and mt then
-                    mt.__namecall = S._mechanicOld
-                end
-            end
-            S._mechanicOld = nil
+        rmConn("mechanic")
+        if not on then
             notify("Mechanic deactivated", C.Text3, 3)
+            return
         end
+        local lastSpeed = 0
+        addConn("mechanic", RunService.Heartbeat:Connect(function()
+            if not S.Features["Mechanic"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            local speed = hrp.Velocity.Magnitude
+            if lastSpeed < 55 and speed > 80 then
+                task.spawn(function()
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if not hum then return end
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if not tool then return end
+                    local swordName = tool.Name
+                    hum:UnequipTools()
+                    local eqRemote = remotes and remotes:FindFirstChild("EquipEvent")
+                    if eqRemote then
+                        eqRemote:FireServer("WeaponEquip", swordName)
+                    end
+                end)
+            end
+            lastSpeed = speed
+        end))
+        notify("Mechanic activated", C.Accent, 3)
     end)
 
     makeToggle(combatPage, "Auto-Ability", "Auto-use special ability on cooldown", 10, function(on)
