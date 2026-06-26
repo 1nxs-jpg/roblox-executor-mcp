@@ -19,6 +19,7 @@ local HttpService      = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera      = Workspace.CurrentCamera
+local Lib = ReplicatedStorage:WaitForChild("Lib")
 
 pcall(function()
     for _, n in ipairs({"1nxsHub","1nxsLoader","1nxsMatchHUD","1nxsEvidHUD"}) do
@@ -460,27 +461,27 @@ local function updateCount()
     if S._statusLabel then S._statusLabel.Text = n .. " active" end
 end
 
--- MATCH HUD
-local MatchHudGui
+-- STATS HUD
+local StatsHudGui
 
-local function buildMatchHUD()
-    MatchHudGui = Instance.new("ScreenGui")
-    MatchHudGui.Name = "1nxsMatchHUD"
-    MatchHudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    MatchHudGui.DisplayOrder = 999
-    MatchHudGui.ResetOnSpawn = false
-    MatchHudGui.IgnoreGuiInset = true
-    pcall(function() MatchHudGui.Parent = CoreGui end)
-    if not MatchHudGui.Parent then MatchHudGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
+local function buildStatsHUD()
+    StatsHudGui = Instance.new("ScreenGui")
+    StatsHudGui.Name = "1nxsStatsHUD"
+    StatsHudGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    StatsHudGui.DisplayOrder = 999
+    StatsHudGui.ResetOnSpawn = false
+    StatsHudGui.IgnoreGuiInset = true
+    pcall(function() StatsHudGui.Parent = CoreGui end)
+    if not StatsHudGui.Parent then StatsHudGui.Parent = LocalPlayer:WaitForChild("PlayerGui") end
 
     local bar = Instance.new("Frame")
-    bar.Name = "MatchBar"
+    bar.Name = "StatsBar"
     bar.Size = UDim2.new(0, 480, 0, 40)
     bar.Position = UDim2.new(0.5, -240, 0, 10)
     bar.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     bar.BackgroundTransparency = 0.3
     bar.BorderSizePixel = 0
-    bar.Parent = MatchHudGui
+    bar.Parent = StatsHudGui
     corner(bar, UDim.new(0, 14))
     stroke(bar, C.AccentDim, 1, 0.5)
 
@@ -512,32 +513,37 @@ local function buildMatchHUD()
     end
 
     S._hudLabels = {
-        status   = makePill(80),
-        round    = makePill(90),
-        timer    = makePill(70),
-        kills    = makePill(70),
-        enemy    = makePill(120),
+        cash   = makePill(120),
+        class  = makePill(100),
+        sanity = makePill(80),
+        shift  = makePill(90),
     }
-    S._hudLabels.status.Text = "⏳ Idle"
-    S._hudLabels.round.Text = "Round 0/8"
-    S._hudLabels.timer.Text = "90s"
-    S._hudLabels.kills.Text = "K:0 D:0"
-    S._hudLabels.enemy.Text = "vs ---"
+    S._hudLabels.cash.Text = "Cash: --"
+    S._hudLabels.class.Text = "Class: --"
+    S._hudLabels.sanity.Text = "Sanity: --"
+    S._hudLabels.shift.Text = "Shift: --"
 
     addConn("hud_update", RunService.Heartbeat:Connect(function()
-        if not (MatchHudGui and MatchHudGui.Parent) then return end
-        local plr = LocalPlayer
-        local kills = plr:GetAttribute("Kills") or 0
-        local deaths = plr:GetAttribute("Deaths") or 0
-        S._hudLabels.kills.Text = "K:" .. kills .. " D:" .. deaths
+        if not (StatsHudGui and StatsHudGui.Parent) then return end
+        local ok, stats = pcall(function() return require(Lib).data.Stats end)
+        if ok and type(stats) == "table" then
+            S._hudLabels.cash.Text = "Cash: " .. (stats.Cash or 0)
+            S._hudLabels.class.Text = "Class: " .. (stats.Class or "?")
+            S._hudLabels.sanity.Text = "Sanity: " .. (stats.Sanity or 100)
+            S._hudLabels.shift.Text = "Shift: " .. (stats.HighestShift or 0)
+        end
     end))
 end
 
-local function updateMatchHUD()
+local function updateStatsHUD()
     if not S._hudLabels then return end
-    S._hudLabels.status.Text = S._matchInProgress and "⚔ Fighting" or "⏳ Idle"
-    S._hudLabels.round.Text = "Round " .. S._currentRound .. "/" .. S._maxRounds
-    S._hudLabels.timer.Text = math.max(0, math.floor(S._roundTimeLeft)) .. "s"
+    local ok, stats = pcall(function() return require(Lib).data.Stats end)
+    if ok and type(stats) == "table" then
+        S._hudLabels.cash.Text = "Cash: " .. (stats.Cash or 0)
+        S._hudLabels.class.Text = "Class: " .. (stats.Class or "?")
+        S._hudLabels.sanity.Text = "Sanity: " .. (stats.Sanity or 100)
+        S._hudLabels.shift.Text = "Shift: " .. (stats.HighestShift or 0)
+    end
 end
 
 -- NOTIFICATION SYSTEM
@@ -585,57 +591,14 @@ local function notify(text, color, dur)
     end)
 end
 
--- GAME EVENT TRACKING
-local function hookGameEvents()
-    local rs = ReplicatedStorage
-    local remotes = rs:FindFirstChild("Remotes") or rs:FindFirstChild("Events")
-    if not remotes then return end
-
-    local gameEvent = remotes:FindFirstChild("GameEvent") or remotes:FindFirstChild("GameEvent")
-    if gameEvent and gameEvent:IsA("RemoteEvent") then
-        gameEvent.OnClientEvent:Connect(function(eventName, ...)
-            if eventName == "MatchStart" then
-                S._matchInProgress = true
-                S._myKills = 0
-                S._myDeaths = 0
-                S._queueJoined = false
-                notify("⚔ Match started!", C.Accent, 4)
-                updateMatchHUD()
-            elseif eventName == "RoundFight" then
-                S._currentRound = (S._currentRound or 0) + 1
-                notify("🔄 Round " .. S._currentRound .. " — Fight!", C.Yellow, 3)
-                updateMatchHUD()
-            elseif eventName == "MatchEnd" then
-                S._matchInProgress = false
-                S._currentRound = 0
-                S._queueJoined = false
-                notify("🏁 Match ended", C.Red, 4)
-                updateMatchHUD()
-            elseif eventName == "DeathFeed" then
-                local args = {...}
-                local killer = tostring(args[1] or "?")
-                local victim = tostring(args[2] or "?")
-                if killer == LocalPlayer.Name then
-                    S._myKills = (S._myKills or 0) + 1
-                    notify("💀 You killed " .. victim, C.Green, 3)
-                elseif victim == LocalPlayer.Name then
-                    S._myDeaths = (S._myDeaths or 0) + 1
-                    notify("💀 You were killed by " .. killer, C.Red, 3)
-                end
-                updateMatchHUD()
-            end
-        end)
-    end
-
-    local dashEvent = remotes:FindFirstChild("DashEvent")
-    if dashEvent and dashEvent:IsA("RemoteEvent") then
-        -- Client can fire but also watch for enemy dashes via gameplay effects
-    end
-
-    local blockEvent = remotes:FindFirstChild("BlockEvent")
-    if blockEvent and blockEvent:IsA("RemoteEvent") then
-        -- For auto-parry usage
-    end
+-- GAME STATE HOOK
+local function hookGameState()
+    addConn("gamestate_update", RunService.Heartbeat:Connect(function()
+        local ok, stats = pcall(function() return require(Lib).data.Stats end)
+        if ok and type(stats) == "table" then
+            S._stats = stats
+        end
+    end))
 end
 
 -- LOADING SCREEN
@@ -682,7 +645,7 @@ local function showLoadingScreen(onComplete)
     ver.Size = UDim2.new(1, 0, 0, 18)
     ver.Position = UDim2.new(0, 0, 0, 70)
     ver.BackgroundTransparency = 1
-    ver.Text = "v1.0 — PvP combat features"
+    ver.Text = "v1.0 — Anomaly survival features"
     ver.TextColor3 = C.AccentDim
     ver.Font = C.FontMed
     ver.TextSize = 13
@@ -970,15 +933,13 @@ local function buildHub()
     pad(sidebar, 8, 8, 8, 8)
 
     local categories = {
-        {name="Combat",    icon="⚔",   order=1},
-        {name="ESP",       icon="👁",   order=2},
-        {name="Match",     icon="🏟",   order=3},
-        {name="Swords",    icon="🗡",   order=4},
-        {name="Abilities", icon="⚡",   order=5},
-        {name="Visual",    icon="✨",   order=6},
-        {name="Finishers", icon="💥",   order=7},
-        {name="Misc",      icon="⚙",   order=8},
-        {name="Config",    icon="🗂",   order=9},
+        {name="Visuals",    icon="✨",   order=1},
+        {name="Survival",   icon="🛡",   order=2},
+        {name="Automation", icon="⚙",   order=3},
+        {name="Economy",    icon="💰",   order=4},
+        {name="Teleports",  icon="🌐",   order=5},
+        {name="Movement",   icon="🏃",   order=6},
+        {name="Config",     icon="🗂",   order=7},
     }
 
     local sideBtns = {}
@@ -1705,691 +1666,66 @@ local function buildHub()
         return cont
     end
 
-    --   PAGE: COMBAT
+    --   PAGE: VISUALS
     -- ═══════════════════════════════════════
-    local combatPage = makePage("Combat")
+    local visPage = makePage("Visuals")
 
-    local remotes = (ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage:FindFirstChild("Events"))
-    local blockEvent = remotes and remotes:FindFirstChild("BlockEvent")
-    local useAbility = remotes and remotes:FindFirstChild("UseAbility")
+    local LibModule = require(Lib)
+    local Net = LibModule and LibModule.Network
 
-    local function findDashEvent()
-        local char = LocalPlayer.Character
-        if not char then return nil end
-        for _, t in pairs(char:GetChildren()) do
-            if t:IsA("Tool") then
-                local de = t:FindFirstChild("DashEvent")
-                if de and de:IsA("RemoteEvent") then return de end
-            end
+    local function fireNet(name, ...)
+        if Net and type(Net.FireServer) == "function" then
+            Net:FireServer(name, ...)
         end
-        return nil
     end
 
-    local function fireDash()
-        local dashEvent = findDashEvent()
-        if not dashEvent then return false end
-        local char = LocalPlayer.Character
-        if not char then return false end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return false end
-        local target, bestDist = nil, math.huge
-        for _, p in pairs(Players:GetPlayers()) do
-            if isEnemy(p) then
-                local thrp = p.Character:FindFirstChild("HumanoidRootPart")
-                if thrp then
-                    local d = (hrp.Position - thrp.Position).Magnitude
-                    if d < bestDist and d < 130 then bestDist = d target = thrp end
-                end
-            end
-        end
-        if target then
-            local aimDir = (target.Position - hrp.Position).Unit
-            dashEvent:FireServer(1.0, true, aimDir)
-            return true
-        end
-        return false
+    local function getStats()
+        if S._stats then return S._stats end
+        local ok, stats = pcall(function() return LibModule.data.Stats end)
+        if ok and type(stats) == "table" then S._stats = stats end
+        return S._stats
     end
 
-    makeToggle(combatPage, "Auto-Dash", "Auto-dash at nearest enemy (full charge)", 1, function(on)
-        rmConn("autodash")
-        if not on then return end
-        addConn("autodash", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto-Dash"] then return end
-            fireDash()
-        end))
-    end)
+    -- Helper for ESP
+    local function makeHighlight(adornee, fillColor, fillTrans, outlineColor)
+        local hl = Instance.new("Highlight")
+        hl.FillColor = fillColor or C.Red
+        hl.FillTransparency = fillTrans or 0.5
+        hl.OutlineColor = outlineColor or fillColor or C.Red
+        hl.OutlineTransparency = 0.1
+        hl.Adornee = adornee
+        hl.Parent = CoreGui
+        return hl
+    end
 
-    makeToggle(combatPage, "Auto-Parry", "Auto-block when enemy dashes nearby", 2, function(on)
-        rmConn("autoparry")
-        if not on then return end
-        addConn("autoparry", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto-Parry"] or not blockEvent then return end
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            local myPos = hrp.Position
-            for _, p in pairs(Players:GetPlayers()) do
-                if isEnemy(p) then
-                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if not thrp then continue end
-                    local dir = myPos - thrp.Position
-                    local dist = dir.Magnitude
-                    if dist < 20 then
-                        blockEvent:FireServer()
-                        break
-                    end
-                    if dist < 55 then
-                        local vel = thrp.Velocity
-                        local speed = vel.Magnitude
-                        if speed > 30 then
-                            local toward = dir.Unit
-                            local velDir = vel.Unit
-                            if velDir:Dot(toward) > 0.6 then
-                                blockEvent:FireServer()
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-        end))
-    end)
-
-    makeToggle(combatPage, "Aimbot", "Auto-aim camera at nearest enemy", 4, function(on)
-        rmConn("aimbot")
-        if not on then return end
-        addConn("aimbot", RunService.RenderStepped:Connect(function()
-            if not S.Features["Aimbot"] then return end
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            local target, bestDist = nil, math.huge
-            for _, p in pairs(Players:GetPlayers()) do
-                if isEnemy(p) then
-                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if thrp then
-                        local d = (hrp.Position - thrp.Position).Magnitude
-                        if d < bestDist and d < 130 then bestDist = d target = thrp end
-                    end
-                end
-            end
-            if target then
-                local goal = CFrame.new(Camera.CFrame.Position, target.Position)
-                Camera.CFrame = Camera.CFrame:Lerp(goal, 0.25)
-            end
-        end))
-    end)
-
-    makeToggle(combatPage, "Infinite Jump", "Jump in air (multi-jump) — 0.5s cooldown", 5, function(on)
-        rmConn("infjump")
-        if not on then return end
-        local UIS = UserInputService
-        local lastJump = 0
-        addConn("infjump", UIS.JumpRequest:Connect(function()
-            if not S.Features["Infinite Jump"] then return end
-            local now = tick()
-            if now - lastJump < 0.5 then return end
-            lastJump = now
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end))
-    end)
-
-    makeToggle(combatPage, "Berzerk", "Remove dash cooldown (client-side)", 6, function(on)
-        local plr = LocalPlayer
-        if on then
-            plr:SetAttribute("Berzerk", true)
-            notify("⚡ Berzerk mode activated", C.Yellow, 3)
-        else
-            plr:SetAttribute("Berzerk", nil)
-            notify("⚡ Berzerk deactivated", C.Text3, 3)
-        end
-    end)
-
-    makeToggle(combatPage, "Anti-Death", "Keep health max and auto-respawn", 7, function(on)
-        rmConn("antideath")
-        rmConn("antideath_respawn")
-        if not on then return end
-        addConn("antideath", RunService.Heartbeat:Connect(function()
-            if not S.Features["Anti-Death"] then return end
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                pcall(function() hum.Health = hum.MaxHealth end)
-            end
-        end))
-        addConn("antideath_respawn", LocalPlayer.CharacterAdded:Connect(function(char)
-            task.wait(0.5)
-            local hum = char:WaitForChild("Humanoid", 5)
-            if hum then
-                pcall(function() hum.Health = hum.MaxHealth end)
-            end
-        end))
-    end)
-
-    makeToggle(combatPage, "Auto-Ability", "Auto-use special ability on cooldown", 8, function(on)
-        rmConn("autoabil")
-        if not on or not useAbility then return end
-        addConn("autoabil", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto-Ability"] then return end
-            local plr = LocalPlayer
-            local ability = plr:GetAttribute("Ability")
-            if ability and ability ~= "" then
-                useAbility:FireServer("SpecialAbility")
-            end
-        end))
-    end)
-    --   PAGE: ESP
-    -- ═══════════════════════════════════════
-    local espPage = makePage("ESP")
-
-    makeToggle(espPage, "Player Highlight", "Highlight all players through walls", 1, function(on)
-        clearHL("players")
-        rmConn("plr_esp")
-        if not on then return end
-        S.Highlights["players"] = {}
-        S.Billboards["players"] = {}
-
-        local function scan()
-            clearHL("players")
-            S.Highlights["players"] = {}
-            S.Billboards["players"] = {}
-            for _, p in pairs(Players:GetPlayers()) do
-                if isEnemy(p) then
-                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local hl = Instance.new("Highlight")
-                        hl.FillColor = C.Red
-                        hl.FillTransparency = 0.5
-                        hl.OutlineColor = C.Red
-                        hl.OutlineTransparency = 0.1
-                        hl.Adornee = p.Character
-                        hl.Parent = CoreGui
-                        table.insert(S.Highlights["players"], hl)
-
-                        local bb = Instance.new("BillboardGui")
-                        bb.Size = UDim2.new(0, 110, 0, 26)
-                        bb.StudsOffset = Vector3.new(0, 3.5, 0)
-                        bb.AlwaysOnTop = true
-                        bb.Adornee = hrp
-                        bb.Parent = CoreGui
-
-                        local bg = Instance.new("Frame")
-                        bg.Size = UDim2.new(1, 0, 1, 0)
-                        bg.BackgroundColor3 = C.Bg1
-                        bg.BackgroundTransparency = 0.15
-                        bg.BorderSizePixel = 0
-                        bg.Parent = bb
-                        corner(bg, UDim.new(0, 4))
-                        stroke(bg, C.Red, 1, 0.4)
-
-                        local l = Instance.new("TextLabel")
-                        l.Size = UDim2.new(1, 0, 1, 0)
-                        l.BackgroundTransparency = 1
-                        l.Text = "🗡 " .. p.Name
-                        l.TextColor3 = C.Red
-                        l.Font = C.FontMed
-                        l.TextSize = 11
-                        l.Parent = bb
-                        table.insert(S.Billboards["players"], bb)
-                    end
-                end
-            end
-        end
-        scan()
-        addConn("plr_esp", RunService.Heartbeat:Connect(function()
-            if not S.Features["Player Highlight"] then return end
-            local now = tick()
-            if not S._lastPlrScan or now - S._lastPlrScan >= 3 then
-                S._lastPlrScan = now
-                pcall(scan)
-            end
-        end))
-    end)
-
-    makeToggle(espPage, "Team Rings", "Color rings below all players", 2, function(on)
-        clearHL("rings")
-        rmConn("ring_loop")
-        if not on then return end
-        S.Highlights["rings"] = {}
-
-        local function scan()
-            clearHL("rings")
-            S.Highlights["rings"] = {}
-            for _, p in pairs(Players:GetPlayers()) do
-                if isEnemy(p) then
-                    local hrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if hrp then
-                        local ring = Instance.new("Part")
-                        ring.Name = "TeamRing"
-                        ring.Size = Vector3.new(6, 0.2, 6)
-                        ring.Shape = Enum.PartType.Cylinder
-                        ring.Material = Enum.Material.Neon
-                        ring.Color = Color3.fromRGB(240, 80, 80)
-                        ring.BrickColor = BrickColor.new("Bright red")
-                        ring.Anchored = true
-                        ring.CanCollide = false
-                        ring.Transparency = 0.3
-                        ring.Parent = CoreGui
-                        local ma = Instance.new("ManualWeld")
-                        ma.Part0 = hrp
-                        ma.Part1 = ring
-                        ma.C1 = CFrame.new(0, -3, 0)
-                        ma.Parent = ring
-                        table.insert(S.Highlights["rings"], ring)
-                    end
-                end
-            end
-        end
-        scan()
-        addConn("ring_loop", RunService.Heartbeat:Connect(function()
-            if not S.Features["Team Rings"] then return end
-            local now = tick()
-            if not S._lastRingScan or now - S._lastRingScan >= 2 then
-                S._lastRingScan = now
-                pcall(scan)
-            end
-        end))
-    end)
-
-    makeToggle(espPage, "Show All Players", "Show all players (spectate mode)", 3, function(on)
-        rmConn("showall")
-        if not on then return end
-        addConn("showall", RunService.Heartbeat:Connect(function()
-            if not S.Features["Show All Players"] then return end
-            for _, p in pairs(Players:GetPlayers()) do
-                if p.Character then
-                    p.Character:SetAttribute("Visible", true)
-                end
-            end
-        end))
-    end)
-
-    makeToggle(espPage, "Distance ESP", "Show distance to enemies", 4, function(on)
-        rmConn("dist_esp")
-        if not on then return end
-        addConn("dist_esp", RunService.Heartbeat:Connect(function()
-            if not S.Features["Distance ESP"] then return end
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            for _, p in pairs(Players:GetPlayers()) do
-                if isEnemy(p) then
-                    local thrp = p.Character:FindFirstChild("HumanoidRootPart")
-                    if thrp then
-                        local dist = (hrp.Position - thrp.Position).Magnitude
-                        p:SetAttribute("DistanceLabel", math.floor(dist))
-                    end
-                end
-            end
-        end))
-    end)
-
-    --   PAGE: MATCH
-    -- ═══════════════════════════════════════
-    local matchPage = makePage("Match")
-
-    makeToggle(matchPage, "Auto-Join Queue", "Automatically join match queue", 1, function(on)
-        rmConn("autoqueue")
-        if not on then return end
-        local joinReq = remotes and remotes:FindFirstChild("JoinQueueRequest")
-        addConn("autoqueue", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto-Join Queue"] or not joinReq then return end
-            if not S._matchInProgress and not S._queueJoined then
-                joinReq:FireServer()
-                S._queueJoined = true
-                notify("🎮 Joined queue", C.Accent, 3)
-            end
-        end))
-    end)
-
-    makeToggle(matchPage, "Auto-Vote Map", "Auto-vote first map when voting starts", 2, function(on)
-        rmConn("autovote")
-        if not on then return end
-        local mapVote = remotes and remotes:FindFirstChild("MapVote")
-        local voted = false
-        addConn("autovote", RunService.Heartbeat:Connect(function()
-            if not S.Features["Auto-Vote Map"] or not mapVote or voted then return end
-            local voteGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("MapVote")
-            if voteGui then
-                local firstBtn = voteGui:FindFirstChildWhichIsA("TextButton")
-                if firstBtn then
-                    mapVote:FireServer(firstBtn.Name)
-                    voted = true
-                end
-            end
-        end))
-    end)
-
-    makeToggle(matchPage, "Auto-Spectate", "Auto-spectate after death", 3, function(on)
-        rmConn("autospec")
-        if not on then return end
-        addConn("autospec", LocalPlayer.CharacterAdded:Connect(function()
-            task.wait(3)
-            local respawnGui = LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("Respawn")
-            if respawnGui then
-                local specBtn = respawnGui:FindFirstChildWhichIsA("TextButton")
-                if specBtn then
-                    specBtn:FindFirstChildOfClass("LocalScript"):Destroy()
-                end
-            end
-        end))
-    end)
-
-    -- Match info display
-    local matchInfoFrame = Instance.new("Frame")
-    matchInfoFrame.Size = UDim2.new(1, 0, 0, 120)
-    matchInfoFrame.BackgroundColor3 = C.Bg3
-    matchInfoFrame.BackgroundTransparency = 0.25
-    matchInfoFrame.BorderSizePixel = 0
-    matchInfoFrame.LayoutOrder = 10
-    matchInfoFrame.Parent = matchPage
-    corner(matchInfoFrame, UDim.new(0, 8))
-
-    local matchInfoTitle = Instance.new("TextLabel")
-    matchInfoTitle.Size = UDim2.new(1, -16, 0, 16)
-    matchInfoTitle.Position = UDim2.new(0, 10, 0, 6)
-    matchInfoTitle.BackgroundTransparency = 1
-    matchInfoTitle.Text = "MATCH INFO"
-    matchInfoTitle.TextColor3 = C.AccentDim
-    matchInfoTitle.Font = C.Font
-    matchInfoTitle.TextSize = 9
-    matchInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
-    matchInfoTitle.Parent = matchInfoFrame
-
-    local matchInfoGrid = Instance.new("UIGridLayout")
-    matchInfoGrid.CellSize = UDim2.new(0.5, -6, 0, 22)
-    matchInfoGrid.CellPadding = UDim2.new(0, 6, 0, 4)
-    matchInfoGrid.SortOrder = Enum.SortOrder.LayoutOrder
-    matchInfoGrid.Parent = matchInfoFrame
-
-    local function makeMatchStat(parent, text, order)
-        local f = Instance.new("Frame")
-        f.Size = UDim2.new(1, 0, 1, 0)
-        f.BackgroundColor3 = C.Bg4
-        f.BackgroundTransparency = 0.2
-        f.BorderSizePixel = 0
-        f.LayoutOrder = order
-        f.Parent = parent
-        corner(f, UDim.new(0, 4))
+    local function makeBillboard(adornee, text, color, yOffset)
+        local bb = Instance.new("BillboardGui")
+        bb.Size = UDim2.new(0, 110, 0, 26)
+        bb.StudsOffset = Vector3.new(0, yOffset or 3.5, 0)
+        bb.AlwaysOnTop = true
+        bb.Adornee = adornee
+        bb.Parent = CoreGui
+        local bg = Instance.new("Frame")
+        bg.Size = UDim2.new(1, 0, 1, 0)
+        bg.BackgroundColor3 = C.Bg1
+        bg.BackgroundTransparency = 0.15
+        bg.BorderSizePixel = 0
+        bg.Parent = bb
+        corner(bg, UDim.new(0, 4))
+        stroke(bg, color or C.Red, 1, 0.4)
         local l = Instance.new("TextLabel")
-        l.Size = UDim2.new(1, -10, 1, 0)
-        l.Position = UDim2.new(0, 6, 0, 0)
+        l.Size = UDim2.new(1, 0, 1, 0)
         l.BackgroundTransparency = 1
         l.Text = text
-        l.TextColor3 = C.Text2
-        l.Font = C.FontReg
-        l.TextSize = 10
-        l.TextXAlignment = Enum.TextXAlignment.Left
-        l.Parent = f
-        return l
+        l.TextColor3 = color or C.Red
+        l.Font = C.FontMed
+        l.TextSize = 11
+        l.Parent = bb
+        table.insert(S.Billboards["vis"], bb)
+        return bb
     end
 
-    local matchStatusLabel = makeMatchStat(matchInfoFrame, "Status: Idle", 1)
-    local matchRoundLabel = makeMatchStat(matchInfoFrame, "Round: -", 2)
-    local matchKillsLabel = makeMatchStat(matchInfoFrame, "Kills: 0", 3)
-    local matchDeathsLabel = makeMatchStat(matchInfoFrame, "Deaths: 0", 4)
-
-    addConn("matchinfo_upd", RunService.Heartbeat:Connect(function()
-        local status = S._matchInProgress and "Fighting" or "Idle"
-        matchStatusLabel.Text = "Status: " .. status
-        matchRoundLabel.Text = "Round: " .. S._currentRound .. "/" .. S._maxRounds
-        matchKillsLabel.Text = "Kills: " .. (S._myKills or 0)
-        matchDeathsLabel.Text = "Deaths: " .. (S._myDeaths or 0)
-    end))
-    --   PAGE: SWORDS
-    -- ═══════════════════════════════════════
-    local swordsPage = makePage("Swords")
-
-    local swordsTitle = Instance.new("TextLabel")
-    swordsTitle.Size = UDim2.new(1, 0, 0, 16)
-    swordsTitle.BackgroundTransparency = 1
-    swordsTitle.Text = "SWORD INVENTORY"
-    swordsTitle.TextColor3 = C.AccentDim
-    swordsTitle.Font = C.Font
-    swordsTitle.TextSize = 9
-    swordsTitle.TextXAlignment = Enum.TextXAlignment.Left
-    swordsTitle.LayoutOrder = 0
-    swordsTitle.Parent = swordsPage
-
-    for i, sword in ipairs(SwordDB) do
-        local gf = Instance.new("Frame")
-        gf.Size = UDim2.new(1, 0, 0, 36)
-        gf.BackgroundColor3 = C.Bg3
-        gf.BackgroundTransparency = 0.4
-        gf.BorderSizePixel = 0
-        gf.LayoutOrder = i
-        gf.Parent = swordsPage
-        corner(gf, UDim.new(0, 6))
-        stroke(gf, Rarities[sword.rarity] or C.AccentDim, 1, 0.65)
-
-        local rarityCol = Rarities[sword.rarity] or C.Text2
-        local nm = Instance.new("TextLabel")
-        nm.Size = UDim2.new(0.4, 0, 0, 16)
-        nm.Position = UDim2.new(0, 10, 0, 3)
-        nm.BackgroundTransparency = 1
-        nm.Text = sword.name
-        nm.TextColor3 = rarityCol
-        nm.Font = C.FontMed
-        nm.TextSize = 11
-        nm.TextXAlignment = Enum.TextXAlignment.Left
-        nm.Parent = gf
-
-        local rarityLbl = Instance.new("TextLabel")
-        rarityLbl.Size = UDim2.new(0.25, 0, 0, 12)
-        rarityLbl.Position = UDim2.new(0, 10, 0, 20)
-        rarityLbl.BackgroundTransparency = 1
-        rarityLbl.Text = sword.rarity
-        rarityLbl.TextColor3 = rarityCol
-        rarityLbl.Font = C.FontReg
-        rarityLbl.TextSize = 8
-        rarityLbl.TextXAlignment = Enum.TextXAlignment.Left
-        rarityLbl.Parent = gf
-
-        local rarityLbl2 = Instance.new("TextLabel")
-        rarityLbl2.Size = UDim2.new(0.3, 0, 0, 14)
-        rarityLbl2.Position = UDim2.new(0.35, 0, 0.5, -7)
-        rarityLbl2.BackgroundTransparency = 1
-        rarityLbl2.Text = sword.rarity:upper()
-        rarityLbl2.TextColor3 = rarityCol
-        rarityLbl2.Font = C.FontReg
-        rarityLbl2.TextSize = 8
-        rarityLbl2.Parent = gf
-
-        local equipBtn = Instance.new("TextButton")
-        equipBtn.Size = UDim2.new(0, 60, 0, 24)
-        equipBtn.Position = UDim2.new(1, -68, 0.5, -12)
-        equipBtn.BackgroundColor3 = rarityCol
-        equipBtn.BackgroundTransparency = 0.35
-        equipBtn.BorderSizePixel = 0
-        equipBtn.Text = "Equip"
-        equipBtn.TextColor3 = C.Text1
-        equipBtn.Font = C.FontMed
-        equipBtn.TextSize = 10
-        equipBtn.Parent = gf
-        corner(equipBtn, UDim.new(0, 5))
-
-        local eqRemote = remotes and remotes:FindFirstChild("EquipEvent")
-        equipBtn.MouseButton1Click:Connect(function()
-            if eqRemote then
-                eqRemote:FireServer("WeaponEquip", sword.name)
-                notify("🗡 Equipped " .. sword.name, rarityCol, 3)
-            end
-        end)
-    end
-
-    --   PAGE: ABILITIES
-    -- ═══════════════════════════════════════
-    local abilsPage = makePage("Abilities")
-
-    local abilsTitle = Instance.new("TextLabel")
-    abilsTitle.Size = UDim2.new(1, 0, 0, 16)
-    abilsTitle.BackgroundTransparency = 1
-    abilsTitle.Text = "SPECIAL ABILITIES"
-    abilsTitle.TextColor3 = C.AccentDim
-    abilsTitle.Font = C.Font
-    abilsTitle.TextSize = 9
-    abilsTitle.TextXAlignment = Enum.TextXAlignment.Left
-    abilsTitle.LayoutOrder = 0
-    abilsTitle.Parent = abilsPage
-
-    for i, abil in ipairs(AbilityDataDB) do
-        local gf = Instance.new("Frame")
-        gf.Size = UDim2.new(1, 0, 0, 36)
-        gf.BackgroundColor3 = C.Bg3
-        gf.BackgroundTransparency = 0.4
-        gf.BorderSizePixel = 0
-        gf.LayoutOrder = i
-        gf.Parent = abilsPage
-        corner(gf, UDim.new(0, 6))
-
-        local nm = Instance.new("TextLabel")
-        nm.Size = UDim2.new(0.35, 0, 0, 16)
-        nm.Position = UDim2.new(0, 10, 0, 3)
-        nm.BackgroundTransparency = 1
-        nm.Text = abil.name
-        nm.TextColor3 = C.Text1
-        nm.Font = C.FontMed
-        nm.TextSize = 11
-        nm.TextXAlignment = Enum.TextXAlignment.Left
-        nm.Parent = gf
-
-        local descLbl = Instance.new("TextLabel")
-        descLbl.Size = UDim2.new(0.35, 0, 0, 12)
-        descLbl.Position = UDim2.new(0, 10, 0, 20)
-        descLbl.BackgroundTransparency = 1
-        descLbl.Text = abil.desc
-        descLbl.TextColor3 = C.Text3
-        descLbl.Font = C.FontReg
-        descLbl.TextSize = 8
-        descLbl.TextXAlignment = Enum.TextXAlignment.Left
-        descLbl.Parent = gf
-
-        local priceTxt = Instance.new("TextLabel")
-        priceTxt.Size = UDim2.new(0.2, 0, 0, 14)
-        priceTxt.Position = UDim2.new(0.55, 0, 0.5, -7)
-        priceTxt.BackgroundTransparency = 1
-        priceTxt.Text = abil.robux and tostring(abil.keysPrice) .. " R$" or (abil.keysPrice == 0 and "Free" or tostring(abil.keysPrice) .. " Keys")
-        priceTxt.TextColor3 = abil.robux and C.Green or C.Yellow
-        priceTxt.Font = C.FontReg
-        priceTxt.TextSize = 8
-        priceTxt.Parent = gf
-
-        local selectBtn = Instance.new("TextButton")
-        selectBtn.Size = UDim2.new(0, 60, 0, 24)
-        selectBtn.Position = UDim2.new(1, -68, 0.5, -12)
-        selectBtn.BackgroundColor3 = C.Purple
-        selectBtn.BackgroundTransparency = 0.35
-        selectBtn.BorderSizePixel = 0
-        selectBtn.Text = "Select"
-        selectBtn.TextColor3 = C.Text1
-        selectBtn.Font = C.FontMed
-        selectBtn.TextSize = 10
-        selectBtn.Parent = gf
-        corner(selectBtn, UDim.new(0, 5))
-
-        local abilShopEvent = remotes and remotes:FindFirstChild("AbilityShopEvent")
-        selectBtn.MouseButton1Click:Connect(function()
-            if abilShopEvent then
-                abilShopEvent:FireServer(abil.name, true, true)
-                notify("⚡ Equipped " .. abil.name, C.Purple, 3)
-            end
-        end)
-    end
-
-    --   PAGE: FINISHERS
-    -- ═══════════════════════════════════════
-    local finishersPage = makePage("Finishers")
-
-    local finishersTitle = Instance.new("TextLabel")
-    finishersTitle.Size = UDim2.new(1, 0, 0, 16)
-    finishersTitle.BackgroundTransparency = 1
-    finishersTitle.Text = "FINISHER MOVES"
-    finishersTitle.TextColor3 = C.AccentDim
-    finishersTitle.Font = C.Font
-    finishersTitle.TextSize = 9
-    finishersTitle.TextXAlignment = Enum.TextXAlignment.Left
-    finishersTitle.LayoutOrder = 0
-    finishersTitle.Parent = finishersPage
-
-    for i, fin in ipairs(FinisherDataDB) do
-        local gf = Instance.new("Frame")
-        gf.Size = UDim2.new(1, 0, 0, 36)
-        gf.BackgroundColor3 = C.Bg3
-        gf.BackgroundTransparency = 0.4
-        gf.BorderSizePixel = 0
-        gf.LayoutOrder = i
-        gf.Parent = finishersPage
-        corner(gf, UDim.new(0, 6))
-
-        local nm = Instance.new("TextLabel")
-        nm.Size = UDim2.new(0.35, 0, 0, 16)
-        nm.Position = UDim2.new(0, 10, 0, 3)
-        nm.BackgroundTransparency = 1
-        nm.Text = fin.name
-        nm.TextColor3 = C.Text1
-        nm.Font = C.FontMed
-        nm.TextSize = 11
-        nm.TextXAlignment = Enum.TextXAlignment.Left
-        nm.Parent = gf
-
-        local descLbl = Instance.new("TextLabel")
-        descLbl.Size = UDim2.new(0.35, 0, 0, 12)
-        descLbl.Position = UDim2.new(0, 10, 0, 20)
-        descLbl.BackgroundTransparency = 1
-        descLbl.Text = fin.desc
-        descLbl.TextColor3 = C.Text3
-        descLbl.Font = C.FontReg
-        descLbl.TextSize = 8
-        descLbl.TextXAlignment = Enum.TextXAlignment.Left
-        descLbl.Parent = gf
-
-        local priceTxt = Instance.new("TextLabel")
-        priceTxt.Size = UDim2.new(0.2, 0, 0, 14)
-        priceTxt.Position = UDim2.new(0.55, 0, 0.5, -7)
-        priceTxt.BackgroundTransparency = 1
-        local priceStr = fin.type == "Robux" and tostring(fin.amount) .. " R$" or (fin.type == "Wins" and tostring(fin.amount) .. " Wins" or tostring(fin.amount) .. " Keys")
-        priceTxt.Text = priceStr
-        priceTxt.TextColor3 = fin.type == "Robux" and C.Green or (fin.type == "Wins" and C.Yellow or C.Accent)
-        priceTxt.Font = C.FontReg
-        priceTxt.TextSize = 8
-        priceTxt.Parent = gf
-
-        local equipBtn = Instance.new("TextButton")
-        equipBtn.Size = UDim2.new(0, 60, 0, 24)
-        equipBtn.Position = UDim2.new(1, -68, 0.5, -12)
-        equipBtn.BackgroundColor3 = C.Purple
-        equipBtn.BackgroundTransparency = 0.35
-        equipBtn.BorderSizePixel = 0
-        equipBtn.Text = "Equip"
-        equipBtn.TextColor3 = C.Text1
-        equipBtn.Font = C.FontMed
-        equipBtn.TextSize = 10
-        equipBtn.Parent = gf
-        corner(equipBtn, UDim.new(0, 5))
-
-        local finisherShopEvent = remotes and remotes:FindFirstChild("FinisherShopEvent")
-        equipBtn.MouseButton1Click:Connect(function()
-            if finisherShopEvent then
-                finisherShopEvent:FireServer("Equip", fin.name)
-                notify("💥 Equipped finisher " .. fin.name, C.Purple, 3)
-            end
-        end)
-    end
-
-    --   PAGE: VISUAL
-    -- ═══════════════════════════════════════
-    local visPage = makePage("Visual")
-
-    makeToggle(visPage, "Fullbright", "Max brightness, clear vision", 1, function(on)
+    makeToggle(visPage, "Fullbright", "Max brightness for clear vision", 1, function(on)
         if on then
             S._origLight = {
                 Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime,
@@ -2407,63 +1743,7 @@ local function buildHub()
         end
     end)
 
-    -- FOV Slider
-    local fovFrame = Instance.new("Frame")
-    fovFrame.Size = UDim2.new(1, 0, 0, 44)
-    fovFrame.BackgroundColor3 = C.Bg3
-    fovFrame.BackgroundTransparency = 0.45
-    fovFrame.BorderSizePixel = 0
-    fovFrame.LayoutOrder = 2
-    fovFrame.Parent = visPage
-    corner(fovFrame, UDim.new(0, 8))
-
-    local fovLabel = Instance.new("TextLabel")
-    fovLabel.Size = UDim2.new(0.6, 0, 0, 16)
-    fovLabel.Position = UDim2.new(0, 12, 0, 6)
-    fovLabel.BackgroundTransparency = 1
-    fovLabel.Text = "Field of View"
-    fovLabel.TextColor3 = C.Text1
-    fovLabel.Font = C.FontMed
-    fovLabel.TextSize = 12
-    fovLabel.TextXAlignment = Enum.TextXAlignment.Left
-    fovLabel.Parent = fovFrame
-
-    local fovValue = Instance.new("TextLabel")
-    fovValue.Size = UDim2.new(0.3, 0, 0, 16)
-    fovValue.Position = UDim2.new(0.7, 0, 0, 6)
-    fovValue.BackgroundTransparency = 1
-    fovValue.Text = "70"
-    fovValue.TextColor3 = C.Accent
-    fovValue.Font = C.FontMed
-    fovValue.TextSize = 12
-    fovValue.Parent = fovFrame
-
-    local fovSlider = Instance.new("TextBox")
-    fovSlider.Size = UDim2.new(0.9, -24, 0, 18)
-    fovSlider.Position = UDim2.new(0.05, 0, 0, 22)
-    fovSlider.BackgroundColor3 = C.Bg4
-    fovSlider.BackgroundTransparency = 0.2
-    fovSlider.BorderSizePixel = 0
-    fovSlider.PlaceholderText = "70"
-    fovSlider.Text = ""
-    fovSlider.TextColor3 = C.Text1
-    fovSlider.PlaceholderColor3 = C.Text3
-    fovSlider.Font = C.FontReg
-    fovSlider.TextSize = 11
-    fovSlider.Parent = fovFrame
-    corner(fovSlider, UDim.new(0, 4))
-
-    fovSlider.FocusLost:Connect(function(enter)
-        if enter then
-            local val = tonumber(fovSlider.Text) or 70
-            val = math.clamp(val, 40, 120)
-            Camera.FieldOfView = val
-            fovValue.Text = tostring(val)
-            fovSlider.Text = ""
-        end
-    end)
-
-    makeToggle(visPage, "No Fog", "Remove all fog", 3, function(on)
+    makeToggle(visPage, "No Fog", "Remove all fog", 2, function(on)
         if on then
             S._origFog = {FogEnd = Lighting.FogEnd, FogStart = Lighting.FogStart}
             Lighting.FogEnd = 1e6; Lighting.FogStart = 1e6
@@ -2472,25 +1752,212 @@ local function buildHub()
         end
     end)
 
-    makeToggle(visPage, "No Effects", "Disable screen effects/visuals", 4, function(on)
-        rmConn("noeff")
-        if on then
-            addConn("noeff", RunService.Heartbeat:Connect(function()
-                if not S.Features["No Effects"] then return end
-                for _, v in pairs(Camera:GetDescendants()) do
-                    if v:IsA("PostEffect") or v:IsA("BlurEffect") then
-                        v.Enabled = false
-                    end
-                end
-            end))
+    makeToggle(visPage, "Night Vision", "Green tint bright vision", 3, function(on)
+        local nv = Lighting:FindFirstChild("HubNV")
+        if on and not nv then
+            local colorCor = Instance.new("ColorCorrectionEffect")
+            colorCor.Name = "HubNV"
+            colorCor.TintColor = Color3.fromRGB(0, 255, 100)
+            colorCor.Contrast = 0.3
+            colorCor.Brightness = 0.2
+            colorCor.Parent = Lighting
+            nv = colorCor
+        elseif not on and nv then
+            nv:Destroy()
         end
     end)
 
-    --   PAGE: MISC
-    -- ═══════════════════════════════════════
-    local miscPage = makePage("Misc")
+    makeToggle(visPage, "Player Highlight", "Highlight all players through walls", 4, function(on)
+        clearHL("vis")
+        rmConn("vis_esp")
+        if not on then return end
+        S.Highlights["vis"] = {}
+        S.Billboards["vis"] = {}
+        local function scan()
+            clearHL("vis")
+            S.Highlights["vis"] = {}
+            S.Billboards["vis"] = {}
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer then
+                    local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local hl = makeHighlight(p.Character, C.Cyan, 0.5, C.Cyan)
+                        table.insert(S.Highlights["vis"], hl)
+                    end
+                end
+            end
+        end
+        scan()
+        addConn("vis_esp", RunService.Heartbeat:Connect(function()
+            if not S.Features["Player Highlight"] then return end
+            local now = tick()
+            if not S._lastVisScan or now - S._lastVisScan >= 3 then
+                S._lastVisScan = now
+                pcall(scan)
+            end
+        end))
+    end)
 
-    makeToggle(miscPage, "Anti-AFK", "Prevent being kicked for AFK", 1, function(on)
+    makeToggle(visPage, "Entity Highlight", "Highlight NPCs and monsters", 5, function(on)
+        rmConn("entity_esp")
+        if not on then return end
+        addConn("entity_esp", RunService.Heartbeat:Connect(function()
+            if not S.Features["Entity Highlight"] then return end
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("Model") and v:FindFirstChild("Humanoid") and v:FindFirstChild("HumanoidRootPart") then
+                    if v ~= LocalPlayer.Character then
+                        local existing = v:FindFirstChild("_1nxsEntityHL")
+                        if not existing then
+                            local hl = makeHighlight(v, Color3.fromRGB(255, 80, 80), 0.4, Color3.fromRGB(255, 80, 80))
+                            hl.Name = "_1nxsEntityHL"
+                            hl.Parent = v
+                        end
+                    end
+                end
+            end
+        end))
+    end)
+
+    makeToggle(visPage, "Distance ESP", "Show distance to entities", 6, function(on)
+        rmConn("dist_esp")
+        if not on then return end
+        addConn("dist_esp", RunService.Heartbeat:Connect(function()
+            if not S.Features["Distance ESP"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and v ~= char then
+                    local thrp = v:FindFirstChild("HumanoidRootPart")
+                    local dist = (hrp.Position - thrp.Position).Magnitude
+                    local bb = v:FindFirstChild("_1nxsDistBB")
+                    if not bb then
+                        bb = Instance.new("BillboardGui")
+                        bb.Name = "_1nxsDistBB"
+                        bb.Size = UDim2.new(0, 80, 0, 20)
+                        bb.StudsOffset = Vector3.new(0, 2, 0)
+                        bb.AlwaysOnTop = true
+                        bb.Adornee = thrp
+                        bb.Parent = v
+                        local l = Instance.new("TextLabel")
+                        l.Size = UDim2.new(1, 0, 1, 0)
+                        l.BackgroundTransparency = 1
+                        l.TextColor3 = C.Text1
+                        l.Font = C.FontMed
+                        l.TextSize = 10
+                        l.TextStrokeTransparency = 0.3
+                        l.Parent = bb
+                    end
+                    local lbl = bb:FindFirstChildOfClass("TextLabel")
+                    if lbl then lbl.Text = math.floor(dist) .. " studs" end
+                end
+            end
+        end))
+    end)
+    --   PAGE: SURVIVAL
+    -- ═══════════════════════════════════════
+    local survivalPage = makePage("Survival")
+
+    -- SURVIVAL TOGGLES
+    makeToggle(survivalPage, "Auto-Treat", "Auto-trigger ProximityPrompts on NPCs", 1, function(on)
+        rmConn("autotreat")
+        if not on then return end
+        addConn("autotreat", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Treat"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Enabled then
+                    local dist = (v.Parent and v.Parent:FindFirstChild("HumanoidRootPart"))
+                    if not dist then dist = v:FindFirstChild("HumanoidRootPart") end
+                    if not dist then dist = (v.Parent or v):IsA("BasePart") and v.Parent or nil end
+                    if dist then
+                        local dp = dist:IsA("BasePart") and dist or dist:FindFirstChildOfClass("BasePart")
+                        if dp and (hrp.Position - dp.Position).Magnitude < 60 then
+                            v:InputHoldBegin()
+                            task.wait()
+                            v:InputHoldEnd()
+                        end
+                    end
+                end
+            end
+        end))
+    end)
+
+    makeToggle(survivalPage, "Auto-Sprint", "Keep sprinting at all times", 2, function(on)
+        rmConn("autosprint")
+        if not on then return end
+        addConn("autosprint", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Sprint"] then return end
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum:SetAttribute("Sprinting", true)
+                    hum:ChangeState(Enum.HumanoidStateType.Running)
+                end
+            end
+        end))
+    end)
+
+    makeToggle(survivalPage, "No Sanity Loss", "Keep sanity at maximum", 3, function(on)
+        rmConn("nosanity")
+        if not on then return end
+        addConn("nosanity", RunService.Heartbeat:Connect(function()
+            if not S.Features["No Sanity Loss"] then return end
+            local stats = getStats()
+            if stats and stats.Sanity then
+                fireNet("SetSanity", 100)
+                local ok, plyStats = pcall(function() return LibModule.data.Player end)
+                if ok and plyStats then
+                    plyStats.Sanity = 100
+                end
+            end
+        end))
+    end)
+
+    makeToggle(survivalPage, "No Damage", "Prevent taking damage", 4, function(on)
+        rmConn("nodamage")
+        if not on then return end
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.BreakJointsOnDeath = false
+            end
+        end
+        addConn("nodamage", RunService.Heartbeat:Connect(function()
+            if not S.Features["No Damage"] then return end
+            local c = LocalPlayer.Character
+            if c then
+                local h = c:FindFirstChildOfClass("Humanoid")
+                if h then
+                    h.BreakJointsOnDeath = false
+                    h.MaxHealth = 100
+                    if h.Health < 100 then
+                        pcall(function() h.Health = 100 end)
+                    end
+                end
+            end
+        end))
+    end)
+
+    makeToggle(survivalPage, "Infinite Stamina", "Never run out of stamina", 5, function(on)
+        rmConn("stamina")
+        if not on then return end
+        addConn("stamina", RunService.Heartbeat:Connect(function()
+            if not S.Features["Infinite Stamina"] then return end
+            local stats = getStats()
+            if stats then
+                fireNet("SetStamina", 100)
+            end
+        end))
+    end)
+
+    makeToggle(survivalPage, "Anti-AFK", "Prevent being kicked for AFK", 6, function(on)
         rmConn("antiafk")
         if not on then return end
         addConn("antiafk", RunService.Heartbeat:Connect(function()
@@ -2504,35 +1971,201 @@ local function buildHub()
             end
         end))
     end)
+    --   PAGE: AUTOMATION
+    -- ═══════════════════════════════════════
+    local autoPage = makePage("Automation")
 
-    -- Server Info display
-    local serverInfoFrame = Instance.new("Frame")
-    serverInfoFrame.Size = UDim2.new(1, 0, 0, 100)
-    serverInfoFrame.BackgroundColor3 = C.Bg3
-    serverInfoFrame.BackgroundTransparency = 0.25
-    serverInfoFrame.BorderSizePixel = 0
-    serverInfoFrame.LayoutOrder = 5
-    serverInfoFrame.Parent = miscPage
-    corner(serverInfoFrame, UDim.new(0, 8))
+    makeToggle(autoPage, "Auto-Quickstart", "Auto-start shift when available", 1, function(on)
+        rmConn("autoqs")
+        if not on then return end
+        addConn("autoqs", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Quickstart"] then return end
+            pcall(function() fireNet("Quickstart") end)
+        end))
+    end)
 
-    local serverInfoTitle = Instance.new("TextLabel")
-    serverInfoTitle.Size = UDim2.new(1, -16, 0, 16)
-    serverInfoTitle.Position = UDim2.new(0, 10, 0, 6)
-    serverInfoTitle.BackgroundTransparency = 1
-    serverInfoTitle.Text = "SERVER INFO"
-    serverInfoTitle.TextColor3 = C.AccentDim
-    serverInfoTitle.Font = C.Font
-    serverInfoTitle.TextSize = 9
-    serverInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
-    serverInfoTitle.Parent = serverInfoFrame
+    makeToggle(autoPage, "Auto-Exit Room", "Auto-exit current room", 2, function(on)
+        rmConn("autoexit")
+        if not on then return end
+        addConn("autoexit", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Exit Room"] then return end
+            pcall(function() fireNet("ExitRoom") end)
+        end))
+    end)
 
-    local siGrid = Instance.new("UIGridLayout")
-    siGrid.CellSize = UDim2.new(0.5, -6, 0, 22)
-    siGrid.CellPadding = UDim2.new(0, 6, 0, 4)
-    siGrid.SortOrder = Enum.SortOrder.LayoutOrder
-    siGrid.Parent = serverInfoFrame
+    makeToggle(autoPage, "Auto-Collect", "Auto-collect nearby items", 3, function(on)
+        rmConn("autocollect")
+        if not on then return end
+        addConn("autocollect", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Collect"] then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+            for _, v in pairs(Workspace:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and v.Enabled and (v.Parent or v):IsA("BasePart") then
+                    local part = v.Parent:IsA("BasePart") and v.Parent or v
+                    if (hrp.Position - part.Position).Magnitude < 50 then
+                        v:InputHoldBegin()
+                        task.wait()
+                        v:InputHoldEnd()
+                    end
+                end
+            end
+        end))
+    end)
 
-    local function makeSIStat(parent, text, order)
+    local autoQuestTimeout = 0
+    makeToggle(autoPage, "Auto-Complete Quests", "Auto-complete active quests", 4, function(on)
+        rmConn("autoquest")
+        if not on then return end
+        addConn("autoquest", RunService.Heartbeat:Connect(function()
+            if not S.Features["Auto-Complete Quests"] then return end
+            local now = tick()
+            if now - autoQuestTimeout < 10 then return end
+            autoQuestTimeout = now
+            local ok, qData = pcall(function() return LibModule.data.Quests end)
+            if ok and type(qData) == "table" then
+                for questName, questInfo in pairs(qData) do
+                    if type(questInfo) == "table" and questInfo.Status == "Active" then
+                        pcall(function() fireNet("CompleteQuest", questName) end)
+                    end
+                end
+            end
+        end))
+    end)
+    --   PAGE: ECONOMY
+    -- ═══════════════════════════════════════
+    local econPage = makePage("Economy")
+
+    -- Class dropdown
+    local classFrame = Instance.new("Frame")
+    classFrame.Size = UDim2.new(1, 0, 0, 88)
+    classFrame.BackgroundColor3 = C.Bg3
+    classFrame.BackgroundTransparency = 0.45
+    classFrame.BorderSizePixel = 0
+    classFrame.LayoutOrder = 1
+    classFrame.Parent = econPage
+    corner(classFrame, UDim.new(0, 8))
+
+    local classLabel = Instance.new("TextLabel")
+    classLabel.Size = UDim2.new(1, -16, 0, 16)
+    classLabel.Position = UDim2.new(0, 10, 0, 6)
+    classLabel.BackgroundTransparency = 1
+    classLabel.Text = "SELECT CLASS"
+    classLabel.TextColor3 = C.AccentDim
+    classLabel.Font = C.Font
+    classLabel.TextSize = 9
+    classLabel.TextXAlignment = Enum.TextXAlignment.Left
+    classLabel.Parent = classFrame
+
+    local classDropdown = Instance.new("TextBox")
+    classDropdown.Size = UDim2.new(0.65, -8, 0, 30)
+    classDropdown.Position = UDim2.new(0, 10, 0, 28)
+    classDropdown.BackgroundColor3 = C.Bg4
+    classDropdown.BackgroundTransparency = 0.12
+    classDropdown.BorderSizePixel = 0
+    classDropdown.ClearTextOnFocus = false
+    classDropdown.PlaceholderText = "Class name"
+    classDropdown.Text = "Intern"
+    classDropdown.TextColor3 = C.Text1
+    classDropdown.PlaceholderColor3 = C.Text3
+    classDropdown.Font = C.FontMed
+    classDropdown.TextSize = 11
+    classDropdown.TextXAlignment = Enum.TextXAlignment.Center
+    classDropdown.Parent = classFrame
+    corner(classDropdown, UDim.new(0, 6))
+
+    local buyClassBtn = Instance.new("TextButton")
+    buyClassBtn.Size = UDim2.new(0.3, -8, 0, 30)
+    buyClassBtn.Position = UDim2.new(0.68, 0, 0, 28)
+    buyClassBtn.BackgroundColor3 = C.Accent
+    buyClassBtn.BackgroundTransparency = 0.12
+    buyClassBtn.BorderSizePixel = 0
+    buyClassBtn.Text = "Buy"
+    buyClassBtn.TextColor3 = C.Text1
+    buyClassBtn.Font = C.FontMed
+    buyClassBtn.TextSize = 11
+    buyClassBtn.Parent = classFrame
+    corner(buyClassBtn, UDim.new(0, 6))
+    buyClassBtn.MouseButton1Click:Connect(function()
+        local name = classDropdown.Text
+        if name and name ~= "" then
+            fireNet("BuyClass", name)
+            notify("Bought class: " .. name, C.Accent, 3)
+        end
+    end)
+
+    local equipClassBtn = Instance.new("TextButton")
+    equipClassBtn.Size = UDim2.new(0.45, -6, 0, 28)
+    equipClassBtn.Position = UDim2.new(0, 10, 0, 64)
+    equipClassBtn.BackgroundColor3 = C.Green
+    equipClassBtn.BackgroundTransparency = 0.2
+    equipClassBtn.BorderSizePixel = 0
+    equipClassBtn.Text = "Equip"
+    equipClassBtn.TextColor3 = C.Text1
+    equipClassBtn.Font = C.FontMed
+    equipClassBtn.TextSize = 11
+    equipClassBtn.Parent = classFrame
+    corner(equipClassBtn, UDim.new(0, 6))
+    equipClassBtn.MouseButton1Click:Connect(function()
+        local name = classDropdown.Text
+        if name and name ~= "" then
+            fireNet("EquipClass", name)
+            notify("Equipped class: " .. name, C.Green, 3)
+        end
+    end)
+
+    local buyEquipBtn = Instance.new("TextButton")
+    buyEquipBtn.Size = UDim2.new(0.45, -6, 0, 28)
+    buyEquipBtn.Position = UDim2.new(0.5, 0, 0, 64)
+    buyEquipBtn.BackgroundColor3 = C.Accent
+    buyEquipBtn.BackgroundTransparency = 0.2
+    buyEquipBtn.BorderSizePixel = 0
+    buyEquipBtn.Text = "Buy + Equip"
+    buyEquipBtn.TextColor3 = C.Text1
+    buyEquipBtn.Font = C.FontMed
+    buyEquipBtn.TextSize = 11
+    buyEquipBtn.Parent = classFrame
+    corner(buyEquipBtn, UDim.new(0, 6))
+    buyEquipBtn.MouseButton1Click:Connect(function()
+        local name = classDropdown.Text
+        if name and name ~= "" then
+            fireNet("BuyClass", name)
+            task.wait(0.5)
+            fireNet("EquipClass", name)
+            notify("Bought + equipped: " .. name, C.Accent, 3)
+        end
+    end)
+
+    -- Stats display
+    local statsFrame = Instance.new("Frame")
+    statsFrame.Size = UDim2.new(1, 0, 0, 130)
+    statsFrame.BackgroundColor3 = C.Bg3
+    statsFrame.BackgroundTransparency = 0.25
+    statsFrame.BorderSizePixel = 0
+    statsFrame.LayoutOrder = 2
+    statsFrame.Parent = econPage
+    corner(statsFrame, UDim.new(0, 8))
+
+    local statsTitle = Instance.new("TextLabel")
+    statsTitle.Size = UDim2.new(1, -16, 0, 16)
+    statsTitle.Position = UDim2.new(0, 10, 0, 6)
+    statsTitle.BackgroundTransparency = 1
+    statsTitle.Text = "PLAYER STATS"
+    statsTitle.TextColor3 = C.AccentDim
+    statsTitle.Font = C.Font
+    statsTitle.TextSize = 9
+    statsTitle.TextXAlignment = Enum.TextXAlignment.Left
+    statsTitle.Parent = statsFrame
+
+    local statsGrid = Instance.new("UIGridLayout")
+    statsGrid.CellSize = UDim2.new(0.5, -6, 0, 22)
+    statsGrid.CellPadding = UDim2.new(0, 6, 0, 4)
+    statsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+    statsGrid.Parent = statsFrame
+
+    local function makeStat(parent, text, order)
         local f = Instance.new("Frame")
         f.Size = UDim2.new(1, 0, 1, 0)
         f.BackgroundColor3 = C.Bg4
@@ -2554,34 +2187,134 @@ local function buildHub()
         return l
     end
 
-    local siPlayers = makeSIStat(serverInfoFrame, "Players: 0", 1)
-    local siPing = makeSIStat(serverInfoFrame, "Ping: 0ms", 2)
-    local siPlaceId = makeSIStat(serverInfoFrame, "Place: -", 3)
-    local siUptime = makeSIStat(serverInfoFrame, "Uptime: 0s", 4)
+    local statCash = makeStat(statsFrame, "Cash: --", 1)
+    local statClass = makeStat(statsFrame, "Class: --", 2)
+    local statSanity = makeStat(statsFrame, "Sanity: --", 3)
+    local statPatients = makeStat(statsFrame, "Patients: 0", 4)
+    local statShift = makeStat(statsFrame, "Best Shift: 0", 5)
+    local statPing = makeStat(statsFrame, "Ping: 0ms", 6)
 
-    addConn("si_update", RunService.Heartbeat:Connect(function()
-        siPlayers.Text = "Players: " .. #Players:GetPlayers()
-        siPing.Text = "Ping: " .. math.floor(LocalPlayer:GetNetworkPing() * 1000) .. "ms"
-        siPlaceId.Text = "Place: " .. (game.PlaceId or "-")
-        local up = math.floor(os.clock())
-        siUptime.Text = "Uptime: " .. up .. "s"
+    addConn("econ_update", RunService.Heartbeat:Connect(function()
+        local stats = getStats()
+        if stats then
+            statCash.Text = "Cash: " .. (stats.Cash or 0)
+            statClass.Text = "Class: " .. (stats.Class or "?")
+            statSanity.Text = "Sanity: " .. (stats.Sanity or 100)
+            statPatients.Text = "Patients: " .. (stats.PatientsTreated or 0)
+            statShift.Text = "Best Shift: " .. (stats.HighestShift or 0)
+        end
+        statPing.Text = "Ping: " .. math.floor(LocalPlayer:GetNetworkPing() * 1000) .. "ms"
     end))
+    --   PAGE: TELEPORTS
+    -- ═══════════════════════════════════════
+    local telePage = makePage("Teleports")
 
-    -- Rejoin button
+    local teleTitle = Instance.new("TextLabel")
+    teleTitle.Size = UDim2.new(1, 0, 0, 16)
+    teleTitle.BackgroundTransparency = 1
+    teleTitle.Text = "TELEPORT LOCATIONS"
+    teleTitle.TextColor3 = C.AccentDim
+    teleTitle.Font = C.Font
+    teleTitle.TextSize = 9
+    teleTitle.TextXAlignment = Enum.TextXAlignment.Left
+    teleTitle.LayoutOrder = 0
+    teleTitle.Parent = telePage
+
+    local teleLocations = {
+        {name="Lobby", path="Workspace.Lobby"},
+        {name="NPC Doctor", path="Workspace.NPCs.Doctor"},
+        {name="NPC Nurse", path="Workspace.NPCs.Nurse"},
+        {name="Rooms Area", path="Workspace.Rooms"},
+        {name="Move Point 1", path="Workspace.MovePoints.MovePoint1"},
+    }
+
+    for i, loc in ipairs(teleLocations) do
+        local btn = Instance.new("Frame")
+        btn.Size = UDim2.new(1, 0, 0, 32)
+        btn.BackgroundColor3 = C.Bg3
+        btn.BackgroundTransparency = 0.4
+        btn.BorderSizePixel = 0
+        btn.LayoutOrder = i
+        btn.Parent = telePage
+        corner(btn, UDim.new(0, 6))
+        stroke(btn, C.AccentDim, 1, 0.65)
+
+        local nm = Instance.new("TextLabel")
+        nm.Size = UDim2.new(1, -16, 1, 0)
+        nm.Position = UDim2.new(0, 10, 0, 0)
+        nm.BackgroundTransparency = 1
+        nm.Text = loc.name
+        nm.TextColor3 = C.Text1
+        nm.Font = C.FontMed
+        nm.TextSize = 11
+        nm.TextXAlignment = Enum.TextXAlignment.Left
+        nm.Parent = btn
+
+        local click = Instance.new("TextButton")
+        click.Size = UDim2.new(1, 0, 1, 0)
+        click.BackgroundTransparency = 1
+        click.Text = ""
+        click.Parent = btn
+        click.MouseButton1Click:Connect(function()
+            local ok, target = pcall(function() return loadstring("return " .. loc.path)() end)
+            if ok and target then
+                local hrp = target:IsA("BasePart") and target or target:FindFirstChild("HumanoidRootPart") or target:FindFirstChildWhichIsA("BasePart")
+                if hrp then
+                    local char = LocalPlayer.Character
+                    if char then
+                        local cHrp = char:FindFirstChild("HumanoidRootPart")
+                        if cHrp then
+                            cHrp.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 3, 0))
+                            notify("Teleported to " .. loc.name, C.Accent, 3)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    -- Teleport to closest NPC
+    makeToggle(telePage, "Auto-TP to NPCs", "Teleport to nearest NPC on keybind", 7, function(on)
+        rmConn("tpnpc")
+        if not on then return end
+        addConn("tpnpc", UserInputService.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            if input.KeyCode == Enum.KeyCode.T and S.Features["Auto-TP to NPCs"] then
+                local char = LocalPlayer.Character
+                if not char then return end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+                local best, bestDist = nil, math.huge
+                for _, v in pairs(Workspace:GetDescendants()) do
+                    if v:IsA("Model") and v:FindFirstChild("HumanoidRootPart") and v ~= char then
+                        local thrp = v:FindFirstChild("HumanoidRootPart")
+                        local d = (hrp.Position - thrp.Position).Magnitude
+                        if d < bestDist then bestDist = d best = thrp end
+                    end
+                end
+                if best then
+                    hrp.CFrame = CFrame.new(best.Position + Vector3.new(0, 3, 0))
+                    notify("TP'd to nearest entity", C.Accent, 3)
+                end
+            end
+        end))
+    end)
+
+    -- Rejoin
     local rejoinBtn = Instance.new("Frame")
     rejoinBtn.Size = UDim2.new(1, 0, 0, 36)
     rejoinBtn.BackgroundColor3 = C.Blue
     rejoinBtn.BackgroundTransparency = 0.82
     rejoinBtn.BorderSizePixel = 0
-    rejoinBtn.LayoutOrder = 6
-    rejoinBtn.Parent = miscPage
+    rejoinBtn.LayoutOrder = 8
+    rejoinBtn.Parent = telePage
     corner(rejoinBtn, UDim.new(0, 8))
     stroke(rejoinBtn, C.Blue, 1, 0.5)
 
     local rejoinLbl = Instance.new("TextLabel")
     rejoinLbl.Size = UDim2.new(1, 0, 1, 0)
     rejoinLbl.BackgroundTransparency = 1
-    rejoinLbl.Text = "🔄 Rejoin Server"
+    rejoinLbl.Text = "Rejoin Server"
     rejoinLbl.TextColor3 = C.Blue
     rejoinLbl.Font = C.FontMed
     rejoinLbl.TextSize = 12
@@ -2595,6 +2328,213 @@ local function buildHub()
     rejoinClick.MouseButton1Click:Connect(function()
         local ts = game:GetService("TeleportService")
         ts:Teleport(game.PlaceId, LocalPlayer)
+    end)
+    --   PAGE: MOVEMENT
+    -- ═══════════════════════════════════════
+    local movePage = makePage("Movement")
+
+    -- Speed slider
+    local speedFrame = Instance.new("Frame")
+    speedFrame.Size = UDim2.new(1, 0, 0, 44)
+    speedFrame.BackgroundColor3 = C.Bg3
+    speedFrame.BackgroundTransparency = 0.45
+    speedFrame.BorderSizePixel = 0
+    speedFrame.LayoutOrder = 1
+    speedFrame.Parent = movePage
+    corner(speedFrame, UDim.new(0, 8))
+
+    local speedLabel = Instance.new("TextLabel")
+    speedLabel.Size = UDim2.new(0.6, 0, 0, 16)
+    speedLabel.Position = UDim2.new(0, 12, 0, 6)
+    speedLabel.BackgroundTransparency = 1
+    speedLabel.Text = "WalkSpeed"
+    speedLabel.TextColor3 = C.Text1
+    speedLabel.Font = C.FontMed
+    speedLabel.TextSize = 12
+    speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+    speedLabel.Parent = speedFrame
+
+    local speedValue = Instance.new("TextLabel")
+    speedValue.Size = UDim2.new(0.3, 0, 0, 16)
+    speedValue.Position = UDim2.new(0.7, 0, 0, 6)
+    speedValue.BackgroundTransparency = 1
+    speedValue.Text = "16"
+    speedValue.TextColor3 = C.Accent
+    speedValue.Font = C.FontMed
+    speedValue.TextSize = 12
+    speedValue.Parent = speedFrame
+
+    local speedInput = Instance.new("TextBox")
+    speedInput.Size = UDim2.new(0.9, -24, 0, 18)
+    speedInput.Position = UDim2.new(0.05, 0, 0, 22)
+    speedInput.BackgroundColor3 = C.Bg4
+    speedInput.BackgroundTransparency = 0.2
+    speedInput.BorderSizePixel = 0
+    speedInput.PlaceholderText = "16"
+    speedInput.Text = ""
+    speedInput.TextColor3 = C.Text1
+    speedInput.PlaceholderColor3 = C.Text3
+    speedInput.Font = C.FontReg
+    speedInput.TextSize = 11
+    speedInput.Parent = speedFrame
+    corner(speedInput, UDim.new(0, 4))
+
+    speedInput.FocusLost:Connect(function(enter)
+        if enter then
+            local val = tonumber(speedInput.Text) or 16
+            val = math.clamp(val, 0, 200)
+            speedValue.Text = tostring(val)
+            S._speedVal = val
+            speedInput.Text = ""
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.WalkSpeed = val end
+            end
+        end
+    end)
+
+    addConn("speed_loop", RunService.Heartbeat:Connect(function()
+        if S._speedVal then
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.WalkSpeed ~= S._speedVal then
+                    hum.WalkSpeed = S._speedVal
+                end
+            end
+        end
+    end))
+
+    -- Jump Power slider
+    local jumpFrame = Instance.new("Frame")
+    jumpFrame.Size = UDim2.new(1, 0, 0, 44)
+    jumpFrame.BackgroundColor3 = C.Bg3
+    jumpFrame.BackgroundTransparency = 0.45
+    jumpFrame.BorderSizePixel = 0
+    jumpFrame.LayoutOrder = 2
+    jumpFrame.Parent = movePage
+    corner(jumpFrame, UDim.new(0, 8))
+
+    local jumpLabel = Instance.new("TextLabel")
+    jumpLabel.Size = UDim2.new(0.6, 0, 0, 16)
+    jumpLabel.Position = UDim2.new(0, 12, 0, 6)
+    jumpLabel.BackgroundTransparency = 1
+    jumpLabel.Text = "JumpPower"
+    jumpLabel.TextColor3 = C.Text1
+    jumpLabel.Font = C.FontMed
+    jumpLabel.TextSize = 12
+    jumpLabel.TextXAlignment = Enum.TextXAlignment.Left
+    jumpLabel.Parent = jumpFrame
+
+    local jumpValue = Instance.new("TextLabel")
+    jumpValue.Size = UDim2.new(0.3, 0, 0, 16)
+    jumpValue.Position = UDim2.new(0.7, 0, 0, 6)
+    jumpValue.BackgroundTransparency = 1
+    jumpValue.Text = "50"
+    jumpValue.TextColor3 = C.Accent
+    jumpValue.Font = C.FontMed
+    jumpValue.TextSize = 12
+    jumpValue.Parent = jumpFrame
+
+    local jumpInput = Instance.new("TextBox")
+    jumpInput.Size = UDim2.new(0.9, -24, 0, 18)
+    jumpInput.Position = UDim2.new(0.05, 0, 0, 22)
+    jumpInput.BackgroundColor3 = C.Bg4
+    jumpInput.BackgroundTransparency = 0.2
+    jumpInput.BorderSizePixel = 0
+    jumpInput.PlaceholderText = "50"
+    jumpInput.Text = ""
+    jumpInput.TextColor3 = C.Text1
+    jumpInput.PlaceholderColor3 = C.Text3
+    jumpInput.Font = C.FontReg
+    jumpInput.TextSize = 11
+    jumpInput.Parent = jumpFrame
+    corner(jumpInput, UDim.new(0, 4))
+
+    jumpInput.FocusLost:Connect(function(enter)
+        if enter then
+            local val = tonumber(jumpInput.Text) or 50
+            val = math.clamp(val, 0, 500)
+            jumpValue.Text = tostring(val)
+            S._jumpVal = val
+            jumpInput.Text = ""
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum.JumpPower = val end
+            end
+        end
+    end)
+
+    addConn("jump_loop", RunService.Heartbeat:Connect(function()
+        if S._jumpVal then
+            local char = LocalPlayer.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum and hum.JumpPower ~= S._jumpVal then
+                    hum.JumpPower = S._jumpVal
+                end
+            end
+        end
+    end))
+
+    makeToggle(movePage, "Infinite Jump", "Jump in air (multi-jump)", 3, function(on)
+        rmConn("infjump")
+        if not on then return end
+        local lastJump = 0
+        addConn("infjump", UserInputService.JumpRequest:Connect(function()
+            if not S.Features["Infinite Jump"] then return end
+            local now = tick()
+            if now - lastJump < 0.3 then return end
+            lastJump = now
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end))
+    end)
+
+    makeToggle(movePage, "No Clip", "Walk through walls", 4, function(on)
+        rmConn("noclip")
+        if not on then return end
+        addConn("noclip", RunService.Heartbeat:Connect(function()
+            if not S.Features["No Clip"] then return end
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end))
+    end)
+
+    makeToggle(movePage, "Click Teleport", "Click to teleport to mouse position", 5, function(on)
+        rmConn("clicktp")
+        if not on then return end
+        addConn("clicktp", UserInputService.InputBegan:Connect(function(input, gpe)
+            if gpe then return end
+            if input.UserInputType == Enum.UserInputType.MouseButton1 and S.Features["Click Teleport"] then
+                local char = LocalPlayer.Character
+                if not char then return end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then return end
+                local mousePos = UserInputService:GetMouseLocation()
+                local unitRay = Camera:ScreenPointToRay(mousePos.X, mousePos.Y)
+                local params = RaycastParams.new()
+                params.FilterType = Enum.RaycastFilterType.Blacklist
+                params.FilterDescendantsInstances = {LocalPlayer.Character or {}}
+                local result = Workspace:Raycast(unitRay.Origin, unitRay.Direction * 1000, params)
+                if result then
+                    local cf = CFrame.new(result.Position + Vector3.new(0, 2, 0))
+                    hrp.CFrame = cf
+                end
+            end
+        end))
     end)
 
     -- ═══════════════════════════════════════
@@ -2803,7 +2743,7 @@ local function buildHub()
     end
     switchCat("Home")
 
-    updateMatchHUD()
+    updateStatsHUD()
 
     -- ═══════════════════════════════════════
     --   WINDOW CONTROLS
@@ -2814,7 +2754,7 @@ local function buildHub()
         pcall(function() Lighting:FindFirstChild("HubNV"):Destroy() end)
         if S._origLight then for k, v in pairs(S._origLight) do pcall(function() Lighting[k] = v end) end end
         if S._origFog then pcall(function() Lighting.FogEnd = S._origFog.FogEnd; Lighting.FogStart = S._origFog.FogStart end) end
-        pcall(function() if MatchHudGui then MatchHudGui:Destroy() end end)
+        pcall(function() if StatsHudGui then StatsHudGui:Destroy() end end)
             tw(MainFrame, {Size = UDim2.new(0, windowW, 0, 0), BackgroundTransparency = 1}, 0.3)
         task.wait(0.35)
         Hub:Destroy()
@@ -2868,8 +2808,8 @@ end
 local ok, err = pcall(function()
     showLoadingScreen(function()
         local ok2, err2 = pcall(function()
-            buildMatchHUD()
-            hookGameEvents()
+            buildStatsHUD()
+            hookGameState()
             buildHub()
         end)
         if not ok2 then
