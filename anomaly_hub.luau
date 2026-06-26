@@ -1,7 +1,7 @@
 --[[
-    1NXS SAMURAI HUB v1.0
+    ANOMALY HUB v1.0
     made by 1nxs on discord
-    PvP combat features for Samurai DUELS
+    All-in-one executor hub
 --]]
 
 -- ═══════════════════════════════════════
@@ -144,7 +144,7 @@ local function showKeySystem()
     title.Size = UDim2.new(1, 0, 0, 40)
     title.Position = UDim2.new(0, 0, 0, 10)
     title.BackgroundTransparency = 1
-    title.Text = "🗝️ Samurai Hub v1.0"
+    title.Text = "🗝️ Anomaly Hub v1.0"
     title.TextColor3 = Color3.fromRGB(200, 160, 255)
     title.Font = Enum.Font.GothamBold
     title.TextSize = 18
@@ -269,7 +269,7 @@ end
 if needsKey() then
     local success = pcall(showKeySystem)
     if not success then
-        print("[1nxs Hub] ❌ Key validation failed or cancelled")
+        print("[Anomaly Hub] ❌ Key validation failed or cancelled")
         return
     end
 end
@@ -671,7 +671,7 @@ local function showLoadingScreen(onComplete)
     logo.Size = UDim2.new(1, 0, 0, 40)
     logo.Position = UDim2.new(0, 0, 0, 30)
     logo.BackgroundTransparency = 1
-    logo.Text = "SAMURAI HUB"
+    logo.Text = "ANOMALY HUB"
     logo.TextColor3 = C.Text1
     logo.Font = C.Font
     logo.TextSize = 28
@@ -874,7 +874,7 @@ local function buildHub()
     titleTxt.Size = UDim2.new(0, 250, 0, 20)
     titleTxt.Position = UDim2.new(0, 60, 0, 8)
     titleTxt.BackgroundTransparency = 1
-    titleTxt.Text = "SAMURAI HUB"
+    titleTxt.Text = "ANOMALY HUB"
     titleTxt.TextColor3 = C.Text1
     titleTxt.Font = C.Font
     titleTxt.TextSize = 16
@@ -1235,7 +1235,7 @@ local function buildHub()
     heroSub.Size = UDim2.new(1, -140, 0, 18)
     heroSub.Position = UDim2.new(0, 126, 0, 66)
     heroSub.BackgroundTransparency = 1
-    heroSub.Text = "1nxs - Samurai Hub"
+    heroSub.Text = "1nxs - Anomaly Hub"
     heroSub.TextColor3 = C.Text2
     heroSub.Font = C.FontReg
     heroSub.TextSize = 12
@@ -2859,7 +2859,7 @@ local function buildHub()
     tw(uiScale, {Scale = isPhone and 0.92 or 1}, 0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
     task.wait(0.6)
-    notify("🗡️ Samurai Hub v1.0 loaded", C.Accent, 4)
+    notify("🧪 Anomaly Hub v1.0 loaded", C.Accent, 4)
     notify("made by 1nxs on discord", C.Text3, 5)
     notify("RightShift to toggle", C.Text3, 4)
 end
@@ -2882,7 +2882,7 @@ if not ok then
     warn("[Hub] Fatal error:", err)
     print("[Hub] FATAL ERROR:", err)
 else
-    print("[1nxs Hub] ✅ Samurai Hub v1.0 Loaded")
+    print("[Anomaly Hub] ✅ Loaded")
 end
 
 
