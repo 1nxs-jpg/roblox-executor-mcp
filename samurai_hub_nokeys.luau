@@ -1,4 +1,4 @@
-﻿--[[
+--[[
     1NXS SAMURAI HUB v1.0
     made by 1nxs on discord
     PvP combat features for Samurai DUELS
@@ -1700,37 +1700,28 @@ local function buildHub()
         end))
     end)
 
-    makeToggle(combatPage, "Mechanic", "Remove cooldown by unequipping/equipping sword after dash", 9, function(on)
-        rmConn("mechanic")
+    local mechHooked = false
+    makeToggle(combatPage, "Mechanic", "Hook dash release to cancel cooldown", 9, function(on)
         if not on then
             notify("Mechanic deactivated", C.Text3, 3)
             return
         end
-        local lastSpeed = 0
-        addConn("mechanic", RunService.Heartbeat:Connect(function()
-            if not S.Features["Mechanic"] then return end
-            local char = LocalPlayer.Character
-            if not char then return end
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            local speed = hrp.Velocity.Magnitude
-            if lastSpeed < 55 and speed > 80 then
-                task.spawn(function()
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if not hum then return end
-                    local tool = char:FindFirstChildOfClass("Tool")
-                    if not tool then return end
-                    local swordName = tool.Name
-                    hum:UnequipTools()
-                    local eqRemote = remotes and remotes:FindFirstChild("EquipEvent")
-                    if eqRemote then
-                        eqRemote:FireServer("WeaponEquip", swordName)
+        if not mechHooked then
+            local ch = require(ReplicatedStorage.ToolModules.ChargeHandler)
+            if ch and type(ch.onReleased) == "function" then
+                local orig = hookfunction(ch.onReleased, function(charge, perfect)
+                    if S.Features["Mechanic"] then
+                        ch.cancel()
+                        return
                     end
+                    return orig(charge, perfect)
                 end)
+                mechHooked = true
+                notify("Mechanic activated (dash blocked)", C.Accent, 3)
+            else
+                notify("Mechanic: no onReleased hook", C.Red, 4)
             end
-            lastSpeed = speed
-        end))
-        notify("Mechanic activated", C.Accent, 3)
+        end
     end)
 
     makeToggle(combatPage, "Auto-Ability", "Auto-use special ability on cooldown", 10, function(on)
