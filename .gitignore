@@ -1,3 +1,6 @@
+# Only hub scripts should be tracked — this is a script repo, not MCP source
+# (local MCP infra should NOT be committed)
+
 # Build artifacts
 dist/*
 
@@ -9,9 +12,24 @@ node_modules/*
 
 # Cursor
 .cursor/*
-
-# Cursor
 .cursor/*
 
 # macOS
 .DS_Store
+
+# MCP infrastructure — keep local only
+src/
+docs/
+scripts/
+.agents/
+jailbreak/
+connector.luau
+demonology_hub.lua
+bun.lock
+package-lock.json
+package.json
+pnpm-lock.yaml
+tsconfig.json
+GEMINI.md
+README.md
+LICENSE
